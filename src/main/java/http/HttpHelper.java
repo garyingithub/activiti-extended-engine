@@ -22,7 +22,7 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class HttpHelper  {
+public class HttpHelper {
     // 连接管理器
     private PoolingHttpClientConnectionManager pool;
 
@@ -36,9 +36,9 @@ public class HttpHelper  {
                 setConnectionRequestTimeout(httpConfig.getConnectionRequestTimeout()).
                 setSocketTimeout(httpConfig.getSocketTimeout()).
                 setConnectTimeout(httpConfig.getConnectionTimeout()).build();
-                this.httpConfig = httpConfig;
-                pool = new PoolingHttpClientConnectionManager();
-                pool.setMaxTotal(httpConfig.getMaxTotal());
+        this.httpConfig = httpConfig;
+        pool = new PoolingHttpClientConnectionManager();
+        pool.setMaxTotal(httpConfig.getMaxTotal());
     }
 
     private CloseableHttpClient getHttpClient() {
@@ -50,25 +50,29 @@ public class HttpHelper  {
     }
 
 
-    private String sendRequest(HttpRequestBase requestBase) throws RuntimeException {
+    private String sendRequest(HttpRequestBase requestBase, Map<String, String> headers) {
         CloseableHttpClient httpClient;
-        String responseContent;
+        String content;
         httpClient = getHttpClient();
         requestBase.setConfig(requestConfig);
-        try (CloseableHttpResponse  httpResponse = httpClient.execute(requestBase)) {
+        if (headers != null) {
+            headers.forEach(requestBase::setHeader);
+        }
+        try (CloseableHttpResponse httpResponse = httpClient.execute(requestBase)) {
             HttpEntity httpEntity = httpResponse.getEntity();
             if (httpResponse.getStatusLine().getStatusCode() >= 300) {
                 throw new RuntimeException(String.valueOf((httpResponse.getStatusLine().getStatusCode())));
             }
-            responseContent = EntityUtils.toString(httpEntity, Charset.forName(Constants.CHARSET_UTF_8));
+            content = EntityUtils.toString(httpEntity, Charset.forName(Constants.CHARSET_UTF_8));
+
             EntityUtils.consume(httpEntity);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
-        return responseContent;
+        return content;
     }
 
-    private String postContent(String url, String content) {
+    private String postContent(String url, String content, Map<String, String> headers) {
         StringEntity httpEntity;
         HttpPost httpPost = new HttpPost();
         httpPost.setURI(URI.create(httpConfig.getAddress().concat(url)));
@@ -78,22 +82,22 @@ public class HttpHelper  {
             throw new RuntimeException(e);
         }
         httpEntity.setContentType(Constants.CONTENT_TYPE_JSON_URL);
-        return sendRequest(httpPost);
+        return sendRequest(httpPost, headers);
     }
 
-    public String postParams(String url, Map<String, ?> params) {
-        return postContent(url, stringifyParameters(params));
+    public String postParams(String url, Map<String, ?> params, Map<String, String> headers) {
+        return postContent(url, stringifyParameters(params), headers);
     }
 
-    public String postObject(String url, Object object) {
-        return postContent(url, JSON.toJSONString(object));
+    public String postObject(String url, Object object, Map<String, String> headers) {
+        return postContent(url, JSON.toJSONString(object), headers);
     }
 
-    public String get(String url) {
+    public String get(String url, Map<String, String> headers) {
         HttpGet httpGet = new HttpGet();
         httpGet.setConfig(requestConfig);
         httpGet.setURI(URI.create(httpConfig.getAddress().concat(url)));
-        return sendRequest(httpGet);
+        return sendRequest(httpGet, headers);
     }
 
     private String stringifyParameters(Map<String, ?> parameterMap) {
