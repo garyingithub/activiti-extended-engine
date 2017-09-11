@@ -1,4 +1,4 @@
-package http;
+package cn.edu.sysu.workflow.cloud.load.http;
 
 public class Constants {
    public static final String CHARSET_UTF_8 = "utf-8";

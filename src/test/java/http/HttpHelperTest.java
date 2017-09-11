@@ -1,8 +1,7 @@
 package http;
 
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import org.junit.Before;
-
-import static org.junit.Assert.*;
 
 public class HttpHelperTest {
 

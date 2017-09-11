@@ -1,4 +1,4 @@
-package http;
+package cn.edu.sysu.workflow.cloud.load.http;
 
 import java.io.Serializable;
 

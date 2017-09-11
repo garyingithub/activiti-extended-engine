@@ -1,4 +1,4 @@
-package process.activiti;
+package cn.edu.sysu.workflow.cloud.load.process.activiti;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -11,7 +11,6 @@ public class ProcessVariable implements Serializable{
     private String value;
 
     public String getName() {
-        Proxy.newProxyInstance()
         return name;
     }
 
