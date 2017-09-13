@@ -48,14 +48,14 @@ public class Activiti implements ProcessEngine {
     }
 
     @Override
-    public String completeTask(String processId, String taskName) {
+    public String completeTask(String processId, String taskName, Map<String, Object> variables) {
         String url = null;
         try {
             url = EXTENDED_PREFIX.concat("/completeTask/").concat(processId).concat("/").concat(URLEncoder.encode(taskName, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        return this.httpHelper.postObject(url, "", headers);
+        return this.httpHelper.postObject(url, variables, headers);
     }
 
     @Override

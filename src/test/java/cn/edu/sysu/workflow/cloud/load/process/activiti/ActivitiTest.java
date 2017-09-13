@@ -1,6 +1,7 @@
 package cn.edu.sysu.workflow.cloud.load.process.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,37 +12,33 @@ public class ActivitiTest {
 
     private Activiti activiti;
 
+    String instanceId;
+
     @Before
     public void init() {
         HttpConfig config = new HttpConfig();
         config.setHost("localhost");
-        config.setPort("8080");
+        config.setPort("8081");
 
         Activiti activiti = new Activiti(config);
         this.activiti = activiti;
+
+        instanceId = activiti.startProcess("testUserTasksWithParallel", null);
     }
 
     @Test
     public void startProcess() throws Exception {
-        Map<String, String> data = new HashMap<>();
-        data.put("name", "gary");
-        data.put("email", "s");
-        data.put("phoneNumber", "111");
-        activiti.startProcess("hireProcessWithJpa", data);
+        activiti.startProcess("testUserTasks", null);
     }
 
     @Test
     public void startTask() throws Exception {
-        Map<String, String> data = new HashMap<>();
-        data.put("name", "gary");
-        data.put("email", "s");
-        data.put("phoneNumber", "111");
-        String instanceId = activiti.startProcess("hireProcessWithJpa", data);
-        activiti.startTask(instanceId, "Telephone interview");
+        activiti.startTask(instanceId, "testUserTask");
     }
 
     @Test
     public void completeTask() throws Exception {
+        while (Boolean.TRUE.toString().equals(activiti.completeTask(instanceId, "testUserTask", null)));
     }
 
     @Test

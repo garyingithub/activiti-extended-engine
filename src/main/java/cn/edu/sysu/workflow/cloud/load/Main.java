@@ -22,15 +22,16 @@ public class Main {
 //        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(this.getClass());
         HttpConfig activitiConfig = new HttpConfig();
         activitiConfig.setHost("localhost");
-        activitiConfig.setPort("8080");
+        activitiConfig.setPort("8081");
 
-        final String url = "simulation_logs.mxml";
-        ClassLoader classLoader = Main.class.getClassLoader();
-        URL fileUrl = classLoader.getResource(url);
-        if (fileUrl == null) {
-            throw new RuntimeException("File doesn't exist");
+        Activiti activiti = new Activiti(activitiConfig);
+
+        for(int i = 0; i < 100; i++) {
+            String instanceId = activiti.startProcess("testUserTasksWithParallel", null);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("goUp", true);
+            while (Boolean.TRUE.toString().equals(activiti.completeTask(instanceId, "testUserTask", variables)));
         }
-        File file = new File(fileUrl.getFile());
-        ActivitiSimuluator activitiSimuluator = new ActivitiSimuluator(file, activitiConfig);
+
     }
 }
