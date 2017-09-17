@@ -6,8 +6,10 @@ import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
+import org.springframework.stereotype.Component;
 
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -20,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
 public class Simulator {
     private ProcessEngine engine;
     private File logFile;
@@ -27,6 +30,9 @@ public class Simulator {
     private Map<Integer, ProcessInstance> instanceMap;
 
     private Executor executor = Executors.newCachedThreadPool();
+
+
+    private SimulatorUtil simulatorUtil;
 
     public Simulator(File file) {
         SAXBuilder builder = new SAXBuilder();
@@ -46,7 +52,7 @@ public class Simulator {
                     String timeStampString = taskElement.getChildText("Timestamp");
                     String originator = taskElement.getChildText("Originator");
 
-                    long timeStamp = SimulatorUtil.parseTimeStampString(timeStampString);
+                    long timeStamp = simulatorUtil.parseTimeStampString(timeStampString);
                     if(!taskName.contains("EVENT") && !taskName.equals("subProcess") && !(originator!=null && originator.equals("Automated Service"))) {
                         if(taskEvent.equals("assign")) {
                             ProcessInstance.Task task = new ProcessInstance.Task();

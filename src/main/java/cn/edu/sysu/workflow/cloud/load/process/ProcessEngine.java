@@ -1,5 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.process;
 
+import java.io.File;
 import java.util.Map;
 
 public interface ProcessEngine {
@@ -9,5 +10,5 @@ public interface ProcessEngine {
 
     String completeTask(String processId, String taskName, Map<String, Object> variables);
 
-    <ProcessDefinition> String addProcessDefinition(String name, String location);
+    String addProcessDefinition(String name, File file);
 }

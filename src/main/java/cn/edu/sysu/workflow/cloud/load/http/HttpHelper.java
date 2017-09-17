@@ -9,6 +9,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
@@ -19,7 +22,9 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class HttpHelper {
+import org.apache.http.entity.mime.MultipartEntity;
+
+public class HttpHelper implements IHttpHelper {
     // 连接管理器
     private PoolingHttpClientConnectionManager pool;
 
@@ -94,60 +99,16 @@ public class HttpHelper {
         return sendRequest(httpPost, headers);
     }
 
-//    public String postForm(String url, File file, String name, Map<String, String> headers) {
-//
-//        MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-//
-//       MultipartFile multipartFile = new MultipartFile() {
-//           @Override
-//           public String getName() {
-//               return name;
-//           }
-//
-//           @Override
-//           public String getOriginalFilename() {
-//               return file.getName();
-//           }
-//
-//           @Override
-//           public String getContentType() {
-//               return "text/plain";
-//           }
-//
-//           @Override
-//           public boolean isEmpty() {
-//               return false;
-//           }
-//
-//           @Override
-//           public long getSize() {
-//               return file.length();
-//           }
-//
-//           @Override
-//           public byte[] getBytes() throws IOException {
-//               return Files.readAllBytes(Paths.get(file.getPath()));
-//           }
-//
-//           @Override
-//           public InputStream getInputStream() throws IOException {
-//               return new FileInputStream(file);
-//           }
-//
-//           @Override
-//           public void transferTo(File file) throws IOException, IllegalStateException {
-//
-//           }
-//       };
-//        try {
-//            multipartEntity.addPart(file.getName(), new ByteArrayBody(multipartFile.getBytes(), multipartFile.getContentType(), multipartFile.getOriginalFilename()));
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//
-//        return post(url, headers, multipartEntity);
-//    }
+    public String postFile(String url, File file, Map<String, String> headers) {
+        HttpPost httpPost = new HttpPost();
+        httpPost.setURI(URI.create(httpConfig.getAddress().concat(url)));
+        MultipartEntityBuilder mEntityBuilder = MultipartEntityBuilder.create();
+        mEntityBuilder.addBinaryBody(file.getName(), file);
+        httpPost.setEntity(mEntityBuilder.build());
+        return sendRequest(httpPost, headers);
+    }
+
+
     public String postParams(String url, Map<String, ?> params, Map<String, String> headers) {
         return postContent(url, stringifyParameters(params), headers);
     }
