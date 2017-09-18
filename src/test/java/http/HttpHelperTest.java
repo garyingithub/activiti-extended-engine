@@ -3,6 +3,10 @@ package http;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import org.junit.Before;
 
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+
 public class HttpHelperTest {
 
     HttpConfig config;
@@ -22,10 +26,35 @@ public class HttpHelperTest {
     public void postObject() throws Exception {
     }
 
+    class TestRunnable implements Runnable {
+
+        private CountDownLatch barrier;
+
+        TestRunnable(CountDownLatch barrier) {
+            this.barrier = barrier;
+        }
+
+
+        @Override
+        public void run() {
+            long i = 0;
+            while (i < Long.MAX_VALUE) {
+                i++;
+            }
+
+            barrier.countDown();
+
+        }
+    }
+
     @org.junit.Test
     public void get() throws Exception {
-//        HttpHelper httpHelper = new HttpHelper(config);
-//        assert(!httpHelper.get("").isEmpty());
+        int number = 8;
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        for (int i = 0; i < number; i++) {
+            new Thread(new TestRunnable(countDownLatch)).start();
+        }
+        countDownLatch.await();
     }
 
 }

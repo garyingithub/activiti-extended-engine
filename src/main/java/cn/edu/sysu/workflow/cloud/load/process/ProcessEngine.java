@@ -8,6 +8,8 @@ public interface ProcessEngine {
 
     String startTask(String processId, String taskName);
 
+    void asynStartTask(String processId, String taskName);
+
     String completeTask(String processId, String taskName, Map<String, Object> variables);
 
     String addProcessDefinition(String name, File file);

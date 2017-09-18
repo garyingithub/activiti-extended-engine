@@ -5,7 +5,7 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 public class ProcessInstance {
-    static class Task {
+    public static class Task {
         private String taskName;
         private long duration;
 

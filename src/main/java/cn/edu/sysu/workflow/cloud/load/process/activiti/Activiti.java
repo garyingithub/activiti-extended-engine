@@ -46,6 +46,11 @@ public class Activiti implements ProcessEngine {
     }
 
     @Override
+    public void asyncStartTask(String processId, String taskName) {
+
+    }
+
+    @Override
     public String completeTask(String processId, String taskName, Map<String, Object> variables) {
         String url;
         try {
@@ -60,6 +65,5 @@ public class Activiti implements ProcessEngine {
     public String addProcessDefinition(String name, File file) {
         final String url = "/repository/deployments";
         return httpHelper.postFile(url, file, headers);
-
     }
 }

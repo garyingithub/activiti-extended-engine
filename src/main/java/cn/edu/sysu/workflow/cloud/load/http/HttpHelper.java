@@ -1,6 +1,7 @@
 package cn.edu.sysu.workflow.cloud.load.http;
 
 
+import cn.edu.sysu.workflow.cloud.load.http.async.OkHttpCallback;
 import com.alibaba.fastjson.JSON;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
@@ -113,7 +114,7 @@ public class HttpHelper implements IHttpHelper {
         return postContent(url, stringifyParameters(params), headers);
     }
 
-    public String postObject(String url, Object object, Map<String, String> headers) {
+    public String postObject(String url, Object object, Map<String, String> headers, OkHttpCallback okHttpCallback) {
         return postContent(url, JSON.toJSONString(object), headers);
     }
 

@@ -7,7 +7,9 @@ import okhttp3.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class AsyncHttpHelper implements IHttpHelper {
 
@@ -24,7 +26,7 @@ public class AsyncHttpHelper implements IHttpHelper {
     }
 
     @Override
-    public String postObject(String url, Object object, Map<String, String> headers) {
+    public String postObject(String url, Object object, Map<String, String> headers, OkHttpCallback okHttpCallback) {
 
         Request.Builder requestBuilder = new Request.Builder();
         headers.forEach(requestBuilder::addHeader);
@@ -39,6 +41,7 @@ public class AsyncHttpHelper implements IHttpHelper {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
+                okHttpCallback.call(call, response);
                 response.close();
             }
         });

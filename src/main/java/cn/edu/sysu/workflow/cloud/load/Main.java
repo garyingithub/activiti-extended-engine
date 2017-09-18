@@ -2,22 +2,16 @@ package cn.edu.sysu.workflow.cloud.load;
 
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.process.activiti.Activiti;
-import cn.edu.sysu.workflow.cloud.load.simulator.ActivitiSimuluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import static java.lang.Thread.sleep;
 
@@ -44,7 +38,49 @@ public class Main {
         }
     }
 
-    static volatile int rate = 1;
+    static class Simulator implements Runnable {
+
+        private long times;
+        private Activiti activiti;
+        private List<Executor> executorList;
+        private List<String> instanceIdList;
+
+        public Simulator(long times, Activiti activiti, List<Executor> executorList, List<String> instanceIdList) {
+            this.times = times;
+            this.activiti = activiti;
+            this.executorList = executorList;
+            this.instanceIdList = instanceIdList;
+        }
+
+        @Override
+        public void run() {
+            try {
+                int rate = 10;
+                while (true) {
+                    long start = System.nanoTime();
+                    final int pos = new Long(times % instanceIdList.size()).intValue();
+                    executorList.get(pos).execute(() -> runTask(instanceIdList.get(pos), activiti));
+
+                    times++;
+                    long period = new Double(Math.pow(10, 9) / rate).longValue() - (System.nanoTime() - start);
+                    System.out.println(String.valueOf(((System.nanoTime() - start) / 1000)));
+                    if (period < 0) {
+//                    throw new RuntimeException("It can't be any faster");
+                        System.out.println("---");
+                        period = 0;
+                    }
+
+                    TimeUnit.NANOSECONDS.sleep(period > 0 ? period : 0);
+                }
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    static volatile int rate = 250;
+
     public static void main(String[] args) {
 
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(Main.class);
@@ -80,17 +116,11 @@ public class Main {
                     System.out.println("Request rate has been modified as " + rate + "/s");
                 }
             }).start();
-            while (true) {
-                long start = System.currentTimeMillis();
-                final int pos = new Long(times % instanceIdList.size()).intValue();
-                executorList.get(pos).execute(() -> runTask(instanceIdList.get(pos), activiti));
-
-                times++;
-                logger.debug(String.valueOf(times));
-                long period = new Double(1000.0 * 1000.0 / rate).longValue() - (System.currentTimeMillis() - start);
-                TimeUnit.MICROSECONDS.sleep(period > 0 ? period : 0);
-//                System.out.println((System.currentTimeMillis() - start));
+            Executor simulatorExecutor = Executors.newFixedThreadPool(10);
+            for (int i = 0; i < 10; i++) {
+                simulatorExecutor.execute(new Simulator(times, activiti, executorList, instanceIdList));
             }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -16,7 +16,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@Component
 public class SimulatorUtil {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -40,14 +39,6 @@ public class SimulatorUtil {
 
         logger.info("There are {} process definitions in directory", processDefinitionFiles.length);
         Arrays.stream(processDefinitionFiles).forEach(file -> activiti.addProcessDefinition(file.getName(), file));
-    }
-
-    static class QueueAwareThreadExecutor extends ThreadPoolExecutor {
-
-        public QueueAwareThreadExecutor() {
-            super(1, 1, 0, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(100));
-        }
-
     }
 
 }

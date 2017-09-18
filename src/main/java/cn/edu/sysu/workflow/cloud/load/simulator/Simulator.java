@@ -23,16 +23,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-public class Simulator {
+public abstract class Simulator {
     private ProcessEngine engine;
     private File logFile;
 
-    private Map<Integer, ProcessInstance> instanceMap;
+    protected List<ProcessInstance> instanceMap;
 
-    private Executor executor = Executors.newCachedThreadPool();
+    protected Executor executor = Executors.newCachedThreadPool();
 
 
-    private SimulatorUtil simulatorUtil;
+    private SimulatorUtil simulatorUtil = new SimulatorUtil();
+
+    public List<ProcessInstance> getInstanceMap() {
+        return instanceMap;
+    }
+
+    public void setInstanceMap(List<ProcessInstance> instanceMap) {
+        this.instanceMap = instanceMap;
+    }
 
     public Simulator(File file) {
         SAXBuilder builder = new SAXBuilder();
@@ -69,31 +77,16 @@ public class Simulator {
                     }
                 }
                 instance.setTasks(tasks);
-                instance.setDefinitionId("hireProcessWithJpa");
+                instance.setDefinitionId("testUserTasks-bimp");
                 return instance;
             }).collect(Collectors.toList());
+            this.instanceMap = instances;
         } catch (JDOMException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void simulate() {
-        instanceMap.forEach((key, processInstance) -> executor.execute(() -> {
-            Map<String, String> data = new HashMap<>();
-            data.put("name", "gary");
-            data.put("email", "s");
-            data.put("phoneNumber", "111");
-            final String instanceId = engine.startProcess(processInstance.getDefinitionId(), data);
-            processInstance.getTasks().forEach(task -> {
-                engine.startTask(instanceId, task.getTaskName());
-                try {
-                    TimeUnit.MILLISECONDS.sleep(task.getDuration());
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }));
-    }
+    public abstract void simulate();
 
     public ProcessEngine getEngine() {
         return engine;
@@ -111,11 +104,4 @@ public class Simulator {
         this.logFile = logFile;
     }
 
-    public Map<Integer, ProcessInstance> getInstanceMap() {
-        return instanceMap;
-    }
-
-    public void setInstanceMap(Map<Integer, ProcessInstance> instanceMap) {
-        this.instanceMap = instanceMap;
-    }
 }
