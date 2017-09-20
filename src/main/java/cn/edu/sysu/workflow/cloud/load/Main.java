@@ -2,6 +2,7 @@ package cn.edu.sysu.workflow.cloud.load;
 
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.process.activiti.Activiti;
+import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -25,18 +26,10 @@ public class Main {
         Map<String, Object> variables = new HashMap<>();
         variables.put("continue", false);
 
-        activiti.completeTask(instanceId, "testUserTask0", variables);
+//        activiti.completeTask(instanceId, "testUserTask0", variables);
 
     }
 
-    static void completeProcessInstance(String instanceId, Activiti activiti) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("continue", true);
-        activiti.completeTask(instanceId, "testUserTask0", variables);
-        for (int j = 1; j < 4; j++) {
-            activiti.completeTask(instanceId, "testUserTask" + j, variables);
-        }
-    }
 
     static class Simulator implements Runnable {
 

@@ -1,26 +1,20 @@
 package cn.edu.sysu.workflow.cloud.load.simulator;
 
-import cn.edu.sysu.workflow.cloud.load.SimulatorUtil;
 import cn.edu.sysu.workflow.cloud.load.process.ProcessEngine;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
-import org.springframework.stereotype.Component;
 
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 
 public abstract class Simulator {
@@ -65,12 +59,12 @@ public abstract class Simulator {
                         if(taskEvent.equals("assign")) {
                             ProcessInstance.Task task = new ProcessInstance.Task();
                             task.setTaskName(taskName);
-                            task.setDuration(timeStamp);
+                            task.setStart(timeStamp);
                             tasks.add(task);
                         } else {
                             for(int i = tasks.size() - 1; i >= 0; i--) {
                                 if(tasks.get(i).getTaskName().equals(taskName)) {
-                                    tasks.get(i).setDuration(timeStamp - tasks.get(i).getDuration());
+                                    tasks.get(i).setEnd(timeStamp);
                                 }
                             }
                         }
@@ -79,7 +73,7 @@ public abstract class Simulator {
                 instance.setTasks(tasks);
                 instance.setDefinitionId("testUserTasks-bimp");
                 return instance;
-            }).collect(Collectors.toList());
+            }).collect(toList());
             this.instanceMap = instances;
         } catch (JDOMException | IOException e) {
             throw new RuntimeException(e);

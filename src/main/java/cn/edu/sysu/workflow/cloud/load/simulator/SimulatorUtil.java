@@ -1,5 +1,6 @@
-package cn.edu.sysu.workflow.cloud.load;
+package cn.edu.sysu.workflow.cloud.load.simulator;
 
+import cn.edu.sysu.workflow.cloud.load.Main;
 import cn.edu.sysu.workflow.cloud.load.process.activiti.Activiti;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

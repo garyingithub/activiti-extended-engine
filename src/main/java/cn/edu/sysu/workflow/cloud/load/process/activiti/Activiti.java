@@ -3,18 +3,20 @@ package cn.edu.sysu.workflow.cloud.load.process.activiti;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelper;
 import cn.edu.sysu.workflow.cloud.load.http.async.OkHttpCallback;
+import cn.edu.sysu.workflow.cloud.load.process.ProcessEngine;
+import cn.edu.sysu.workflow.cloud.load.process.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.springframework.util.Base64Utils;
-import cn.edu.sysu.workflow.cloud.load.process.ProcessEngine;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Activiti implements ProcessEngine {
 
@@ -24,7 +26,8 @@ public class Activiti implements ProcessEngine {
     private HttpHelper httpHelper;
 
     private HttpConfig httpConfig;
-    private Timer timer = new Timer();
+
+    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
     public Activiti(HttpConfig httpConfig) {
         this.headers = new HashMap<>();
@@ -37,6 +40,7 @@ public class Activiti implements ProcessEngine {
     private String buildUrl(String url) {
         return httpConfig.getAddress().concat(url);
     }
+
     @Override
     public String startProcess(String definitionId, Object data) {
         String url = EXTENDED_PREFIX.concat("/startProcess/").concat(definitionId);
@@ -45,84 +49,79 @@ public class Activiti implements ProcessEngine {
 
     @Override
     public String startTask(String processId, String taskName) {
-        String url;
-        try {
-            url = EXTENDED_PREFIX.concat("/claimTask/").concat(processId).concat("/").concat(URLEncoder.encode(taskName, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        String url = EXTENDED_PREFIX.concat("/claimTask")
+                .concat(encodePathVariable(processId))
+                .concat(encodePathVariable(taskName));
         return this.httpHelper.postObject(buildUrl(url), "", headers);
     }
 
-    class ActivitiStartTaskCallback implements OkHttpCallback {
+    class AfterClaimTaskCallback implements OkHttpCallback {
 
-        private long needTime;
         private String processId;
-        private String taskName;
-        private Map<String, Object> variables;
-
-        public ActivitiStartTaskCallback(long needTime, String processId, String taskName, Map<String, Object> variables) {
-            this.needTime = needTime;
-            this.processId = processId;
-            this.taskName = taskName;
-            this.variables = variables;
-        }
-
-        class CompleteTaskTimerTask extends TimerTask {
-
-            @Override
-            public void run() {
-                asyncCompleteTask(processId, taskName, variables);
-            }
-        }
+        private TraceNode current;
 
         @Override
         public void call(Call call, Response response) {
-            timer.schedule(new CompleteTaskTimerTask(), needTime);
+            scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MICROSECONDS);
+        }
+
+        AfterClaimTaskCallback(String processId, TraceNode current) {
+            this.processId = processId;
+            this.current = current;
         }
     }
 
-    @Override
-    public void executeTask(String processId, String taskName, long needTime, Map<String, Object> variables) {
-        String url;
-        try {
-            url = EXTENDED_PREFIX.concat("/claimTask/").concat(processId).concat("/").concat(URLEncoder.encode(taskName, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        this.httpHelper.asyncPostObject(buildUrl(url), "", headers, new ActivitiStartTaskCallback(needTime, processId, taskName, variables));
+    private void asyncClaimTask(String processId, TraceNode root) {
+        String url = EXTENDED_PREFIX.concat("/claimTask")
+                .concat(encodePathVariable(processId))
+                .concat(encodePathVariable(root.getTask().getTaskName()));
+
+        this.httpHelper.asyncPostObject(buildUrl(url), "", headers, new AfterClaimTaskCallback(processId, root));
     }
 
-    @Override
-    public String completeTask(String processId, String taskName, Map<String, Object> variables) {
-        String url;
-        try {
-            url = EXTENDED_PREFIX.concat("/completeTask/").concat(processId).concat("/").concat(URLEncoder.encode(taskName, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        return this.httpHelper.postObject(buildUrl(url), variables, headers);
+    private void asyncCompleteTask(String processId, TraceNode root) {
+        String url = EXTENDED_PREFIX.concat("/completeTask")
+                .concat(encodePathVariable(processId))
+                .concat(encodePathVariable(root.getTask().getTaskName()));
+        scheduledExecutorService.schedule(() -> httpHelper.asyncPostObject(buildUrl(url), "", headers, new AfterCompleteTaskCallback(processId, root)), root.getTask().getDuration(), TimeUnit.MICROSECONDS);
+
     }
 
-    @Override
-    public void asyncCompleteTask(String processId, String taskName, Map<String, Object> variables) {
-        String url;
-        try {
-            url = EXTENDED_PREFIX.concat("/completeTask/").concat(processId).concat("/").concat(URLEncoder.encode(taskName, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        this.httpHelper.asyncPostObject(buildUrl(url), variables, headers, new OkHttpCallback() {
-            @Override
-            public void call(Call call, Response response) {
+    class AfterCompleteTaskCallback implements OkHttpCallback {
 
-            }
-        });
+        private String processId;
+        private TraceNode currentNode;
+
+        @Override
+        public void call(Call call, Response response) {
+            currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MICROSECONDS));
+        }
+
+        AfterCompleteTaskCallback(String processId, TraceNode currentNode) {
+            this.processId = processId;
+            this.currentNode = currentNode;
+        }
     }
 
     @Override
     public String addProcessDefinition(String name, File file) {
         final String url = "/repository/deployments";
-        return httpHelper.postFile(url, file, headers);
+        return httpHelper.postFile(buildUrl(url), file, headers);
+    }
+
+    private String encodePathVariable(String pathVariable) {
+        try {
+            return "/".concat(URLEncoder.encode(pathVariable, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void executeTrace(String processId, TraceNode root) {
+        if (root.getTask() == null) {
+            for (TraceNode node : root.getNextNodes()) {
+                asyncClaimTask(processId, node);
+            }
+        }
     }
 }

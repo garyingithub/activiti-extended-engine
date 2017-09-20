@@ -7,7 +7,10 @@ import java.util.List;
 public class ProcessInstance {
     public static class Task {
         private String taskName;
-        private long duration;
+
+        private long start;
+        private long end;
+        private boolean available = true;
 
         public String getTaskName() {
             return taskName;
@@ -18,13 +21,33 @@ public class ProcessInstance {
         }
 
         public long getDuration() {
-            return duration;
+            return end - start;
         }
 
-        public void setDuration(long duration) {
-            this.duration = duration;
+
+        public boolean isAvailable() {
+            return available;
         }
 
+        public void setAvailable(boolean available) {
+            this.available = available;
+        }
+
+        public long getStart() {
+            return start;
+        }
+
+        public void setStart(long start) {
+            this.start = start;
+        }
+
+        public long getEnd() {
+            return end;
+        }
+
+        public void setEnd(long end) {
+            this.end = end;
+        }
     }
 
     private List<Task> tasks;

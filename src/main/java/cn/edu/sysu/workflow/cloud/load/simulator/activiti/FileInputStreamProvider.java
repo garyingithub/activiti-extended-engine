@@ -11,7 +11,7 @@ public class FileInputStreamProvider implements InputStreamProvider {
 
     private File file;
 
-    public FileInputStreamProvider(File file) {
+    FileInputStreamProvider(File file) {
         this.file = file;
     }
 
