@@ -1,12 +1,8 @@
-package cn.edu.sysu.workflow.cloud.load.process.activiti;
+package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ActivitiTest {
 
@@ -33,7 +29,7 @@ public class ActivitiTest {
 
     @Test
     public void startTask() throws Exception {
-        activiti.startTask(instanceId, "testUserTask");
+        activiti.claimTask(instanceId, "testUserTask");
     }
 
     @Test
@@ -43,8 +39,8 @@ public class ActivitiTest {
 
     @Test
     public void addProcessDefinition() throws Exception {
-        String location = "test-process.xml";
-//        activiti.addProcessDefinition("test-process", location);
+        String location = "test-engine.xml";
+//        activiti.deployProcessDefinition("test-engine", location);
     }
 
 }

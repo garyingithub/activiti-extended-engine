@@ -1,11 +1,9 @@
 package http;
 
-import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import org.junit.Before;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 
 public class HttpHelperTest {
 

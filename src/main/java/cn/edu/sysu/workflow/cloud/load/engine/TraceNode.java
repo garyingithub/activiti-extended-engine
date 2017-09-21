@@ -1,4 +1,4 @@
-package cn.edu.sysu.workflow.cloud.load.process;
+package cn.edu.sysu.workflow.cloud.load.engine;
 
 import cn.edu.sysu.workflow.cloud.load.simulator.ProcessInstance;
 

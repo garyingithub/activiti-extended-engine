@@ -1,6 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.simulator;
 
-import cn.edu.sysu.workflow.cloud.load.process.ProcessEngine;
+import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -21,19 +20,19 @@ public abstract class Simulator {
     private ProcessEngine engine;
     private File logFile;
 
-    protected List<ProcessInstance> instanceMap;
+    protected List<ProcessInstance> instanceList;
 
     protected Executor executor = Executors.newCachedThreadPool();
 
 
     private SimulatorUtil simulatorUtil = new SimulatorUtil();
 
-    public List<ProcessInstance> getInstanceMap() {
-        return instanceMap;
+    public List<ProcessInstance> getInstanceList() {
+        return instanceList;
     }
 
-    public void setInstanceMap(List<ProcessInstance> instanceMap) {
-        this.instanceMap = instanceMap;
+    public void setInstanceList(List<ProcessInstance> instanceList) {
+        this.instanceList = instanceList;
     }
 
     public Simulator(File file) {
@@ -43,7 +42,7 @@ public abstract class Simulator {
             Element root = document.getRootElement();
             Element process = root.getChild("Process");
 
-            List<ProcessInstance> instances = (List<ProcessInstance>) process.getChildren("ProcessInstance").stream().map((Object object) -> {
+            this.instanceList = (List<ProcessInstance>) process.getChildren("ProcessInstance").stream().map((Object object) -> {
                 ProcessInstance instance = new ProcessInstance();
                 Element element = (Element)object;
                 List<ProcessInstance.Task> tasks = new ArrayList<>();
@@ -74,7 +73,6 @@ public abstract class Simulator {
                 instance.setDefinitionId("testUserTasks-bimp");
                 return instance;
             }).collect(toList());
-            this.instanceMap = instances;
         } catch (JDOMException | IOException e) {
             throw new RuntimeException(e);
         }

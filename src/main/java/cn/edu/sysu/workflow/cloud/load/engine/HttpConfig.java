@@ -1,4 +1,4 @@
-package cn.edu.sysu.workflow.cloud.load.http;
+package cn.edu.sysu.workflow.cloud.load.engine;
 
 import java.io.Serializable;
 

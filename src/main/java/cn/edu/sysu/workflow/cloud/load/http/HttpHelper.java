@@ -8,7 +8,6 @@ import okhttp3.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static okhttp3.MultipartBody.Builder;
 
@@ -18,18 +17,10 @@ public class HttpHelper {
 
     public HttpHelper() {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
-        clientBuilder.connectTimeout(20, TimeUnit.MINUTES);
         okHttpClient = clientBuilder.build();
     }
 
     public String postFile(String url, File file, Map<String, String> headers) {
-//        HttpPost httpPost = new HttpPost();
-//        httpPost.setURI(URI.create(httpConfig.getAddress().concat(url)));
-//        MultipartEntityBuilder mEntityBuilder = MultipartEntityBuilder.create();
-//        mEntityBuilder.addBinaryBody(file.getName(), file);
-//        httpPost.setEntity(mEntityBuilder.build());
-//        return sendRequest(httpPost, headers);
-
         RequestBody requestBody = new Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", file.getName(),
@@ -51,15 +42,17 @@ public class HttpHelper {
         requestBuilder.post(RequestBody.
                 create(MediaType.parse("application/json; charset=utf-8"), JSON.toJSONString(object)));
         Request request = requestBuilder.build();
+
         okHttpClient.newCall(request).enqueue(new Callback() {
 
             public void onFailure(Call call, IOException e) {
                 throw new RuntimeException(e);
             }
-
-
             public void onResponse(Call call, Response response) throws IOException {
                 callback.call(call, response);
+                if (response.code() >= 400) {
+                    throw new RuntimeException(response.message() + " " + response.code());
+                }
                 response.close();
             }
         });
@@ -107,7 +100,5 @@ public class HttpHelper {
             throw new RuntimeException(e);
         }
     }
-
-
 
 }

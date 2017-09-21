@@ -1,10 +1,10 @@
-package cn.edu.sysu.workflow.cloud.load.process.activiti;
+package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelper;
 import cn.edu.sysu.workflow.cloud.load.http.async.OkHttpCallback;
-import cn.edu.sysu.workflow.cloud.load.process.ProcessEngine;
-import cn.edu.sysu.workflow.cloud.load.process.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
+import cn.edu.sysu.workflow.cloud.load.engine.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.springframework.util.Base64Utils;
@@ -48,11 +48,26 @@ public class Activiti implements ProcessEngine {
     }
 
     @Override
-    public String startTask(String processId, String taskName) {
+    public String claimTask(String processId, String taskName) {
         String url = EXTENDED_PREFIX.concat("/claimTask")
                 .concat(encodePathVariable(processId))
                 .concat(encodePathVariable(taskName));
         return this.httpHelper.postObject(buildUrl(url), "", headers);
+    }
+
+    @Override
+    public String deployProcessDefinition(String name, File file) {
+        final String url = "/repository/deployments";
+        return httpHelper.postFile(buildUrl(url), file, headers);
+    }
+
+    @Override
+    public void executeTrace(String processId, TraceNode root) {
+        if (root.getTask() == null) {
+            for (TraceNode node : root.getNextNodes()) {
+                asyncClaimTask(processId, node);
+            }
+        }
     }
 
     class AfterClaimTaskCallback implements OkHttpCallback {
@@ -62,7 +77,7 @@ public class Activiti implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
-            scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MICROSECONDS);
+            scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MILLISECONDS);
         }
 
         AfterClaimTaskCallback(String processId, TraceNode current) {
@@ -83,7 +98,7 @@ public class Activiti implements ProcessEngine {
         String url = EXTENDED_PREFIX.concat("/completeTask")
                 .concat(encodePathVariable(processId))
                 .concat(encodePathVariable(root.getTask().getTaskName()));
-        scheduledExecutorService.schedule(() -> httpHelper.asyncPostObject(buildUrl(url), "", headers, new AfterCompleteTaskCallback(processId, root)), root.getTask().getDuration(), TimeUnit.MICROSECONDS);
+        scheduledExecutorService.schedule(() -> httpHelper.asyncPostObject(buildUrl(url), root.getVariables(), headers, new AfterCompleteTaskCallback(processId, root)), root.getTask().getDuration(), TimeUnit.MILLISECONDS);
 
     }
 
@@ -94,7 +109,7 @@ public class Activiti implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
-            currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MICROSECONDS));
+            currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
         }
 
         AfterCompleteTaskCallback(String processId, TraceNode currentNode) {
@@ -103,25 +118,12 @@ public class Activiti implements ProcessEngine {
         }
     }
 
-    @Override
-    public String addProcessDefinition(String name, File file) {
-        final String url = "/repository/deployments";
-        return httpHelper.postFile(buildUrl(url), file, headers);
-    }
 
     private String encodePathVariable(String pathVariable) {
         try {
             return "/".concat(URLEncoder.encode(pathVariable, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public void executeTrace(String processId, TraceNode root) {
-        if (root.getTask() == null) {
-            for (TraceNode node : root.getNextNodes()) {
-                asyncClaimTask(processId, node);
-            }
         }
     }
 }
