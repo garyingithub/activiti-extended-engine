@@ -4,6 +4,8 @@ import cn.edu.sysu.workflow.cloud.load.Main;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
 
 
 import java.io.File;
@@ -12,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
+@Component
 public class SimulatorUtil {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -36,5 +39,6 @@ public class SimulatorUtil {
         logger.info("There are {} engine definitions in directory", processDefinitionFiles.length);
         Arrays.stream(processDefinitionFiles).forEach(file -> activiti.deployProcessDefinition(file.getName(), file));
     }
+
 
 }

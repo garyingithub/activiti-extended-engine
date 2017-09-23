@@ -8,6 +8,7 @@ import okhttp3.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static okhttp3.MultipartBody.Builder;
 
@@ -17,6 +18,9 @@ public class HttpHelper {
 
     public HttpHelper() {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        clientBuilder.connectTimeout(1, TimeUnit.DAYS)
+                .readTimeout(1, TimeUnit.DAYS)
+                .writeTimeout(1, TimeUnit.DAYS);
         okHttpClient = clientBuilder.build();
     }
 

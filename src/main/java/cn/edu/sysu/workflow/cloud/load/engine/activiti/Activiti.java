@@ -7,9 +7,12 @@ import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.engine.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Base64Utils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -26,6 +29,7 @@ public class Activiti implements ProcessEngine {
     private HttpHelper httpHelper;
 
     private HttpConfig httpConfig;
+    private Logger logger = LoggerFactory.getLogger(getClass());
 
     private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
@@ -109,7 +113,18 @@ public class Activiti implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
-            currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
+            boolean processFinished;
+            try {
+                String finishedString = response.body().string();
+                processFinished = Boolean.valueOf(finishedString);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            if (processFinished) {
+                currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
+            } else {
+                logger.info("process {} finishes", processId);
+            }
         }
 
         AfterCompleteTaskCallback(String processId, TraceNode currentNode) {

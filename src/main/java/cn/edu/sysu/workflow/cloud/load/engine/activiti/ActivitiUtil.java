@@ -5,9 +5,11 @@ import cn.edu.sysu.workflow.cloud.load.simulator.ProcessInstance;
 import org.activiti.bpmn.model.*;
 import org.activiti.bpmn.model.Process;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+@Component
 public class ActivitiUtil {
     /**
      * 将形如${number == 3} 的el表达式转化为Map, 目前仅支持==
