@@ -36,7 +36,6 @@ public class ActivitiSimuluator extends Simulator {
         model = bpmnXMLConverter.convertToBpmnModel(provider, false, false);
     }
 
-    public volatile static int rate = 80;
     @Override
     public void simulate() {
         for (int i = 0; i < 1; i++) {
@@ -56,7 +55,7 @@ public class ActivitiSimuluator extends Simulator {
                 TraceNode root = activitiUtil.buildTrace(model, processInstance);
                 final long start = System.currentTimeMillis();
                 final String instanceId = getEngine().startProcess(processInstance.getDefinitionId(), null);
-                logger.info("process {} starts !", instanceId);
+                logger.info("process of {} {} starts !", getLogFile().getName(), instanceId);
                 getEngine().executeTrace(instanceId, root);
                 long end = System.currentTimeMillis();
                 logger.info("spend {} milliseconds", end - start);

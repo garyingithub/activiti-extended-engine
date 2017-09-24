@@ -43,7 +43,8 @@ public class LogSimulator {
             }
         });
 
-        activitiSimuluators.forEach(ActivitiSimuluator::simulate);
+        activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
+
 
 //        ActivitiSimuluator activitiSimuluator = applicationContext.getBean(ActivitiSimuluator.class);
 //        activitiSimuluator.simulate();

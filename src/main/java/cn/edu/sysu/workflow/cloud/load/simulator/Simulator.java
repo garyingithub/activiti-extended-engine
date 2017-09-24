@@ -36,6 +36,7 @@ public abstract class Simulator {
     }
 
     public Simulator(File file) {
+        this.logFile = file;
         SAXBuilder builder = new SAXBuilder();
         try {
             Document document = builder.build(file);
@@ -70,7 +71,7 @@ public abstract class Simulator {
                     }
                 }
                 instance.setTasks(tasks);
-                instance.setDefinitionId("testUserTasks-bimp");
+                instance.setDefinitionId(file.getName().substring(0, file.getName().indexOf('.')));
                 return instance;
             }).collect(toList());
         } catch (JDOMException | IOException e) {

@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 @Component
 public class ActivitiUtil {
@@ -18,6 +19,9 @@ public class ActivitiUtil {
      * @return 符合条件要求的变量Map
      */
     private Map<String, Object> parseElExpression(String expression) {
+        if (StringUtils.isBlank(expression)) {
+            return null;
+        }
         Map<String, Object> variables = new HashMap<>();
         expression = StringUtils.remove(expression, ' ');
         expression = expression.substring(2, expression.length() - 1);
@@ -47,7 +51,7 @@ public class ActivitiUtil {
     }
 
     public TraceNode buildTrace(BpmnModel model, ProcessInstance instance) {
-        Optional<FlowElement> flowElementOptional = model.getMainProcess().getFlowElements().stream().filter(flowElement -> flowElement.getId().contains("startEvent")).findFirst();
+        Optional<FlowElement> flowElementOptional = model.getMainProcess().getFlowElements().stream().filter(flowElement -> flowElement instanceof StartEvent).findFirst();
         if (!flowElementOptional.isPresent()) {
             throw new RuntimeException("Can't find first flowElement");
         }
@@ -83,6 +87,26 @@ public class ActivitiUtil {
         return root;
     }
 
+
+    private Optional<SequenceFlow> getGatewayFollowingTaskByName(Process process, Gateway gateway, String taskName) {
+        // TODO 只能处理两级
+        for (SequenceFlow flow : gateway.getOutgoingFlows()) {
+            FlowElement element = process.getFlowElement(flow.getTargetRef());
+            if (element instanceof UserTask) {
+                if (taskName.equals(element.getName())) {
+                    return Optional.of(flow);
+                }
+            } else {
+                if (element instanceof Gateway) {
+                    return getGatewayFollowingTaskByName(process, gateway, taskName);
+                } else {
+                    throw new RuntimeException("Not supported");
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private TraceNode build(
             BpmnModel bpmnModel,
             Map<FlowElement, List<SequenceFlow>> flowMap,
@@ -96,13 +120,24 @@ public class ActivitiUtil {
             for (int i = 0; i < tasks.size(); i++) {
                 if (!tasks.get(i).isAvailable()) continue;
                 for (SequenceFlow sequenceFlow : flowMap.get(nextFlow)) {
-                    if (bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef()).getName().equals(tasks.get(i).getTaskName())) {
+                    FlowElement nextElement = bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef());
+                    if (nextElement instanceof Gateway) {
+                        Optional<SequenceFlow> userTaskOptional = getGatewayFollowingTaskByName(bpmnModel.getMainProcess(), (Gateway) nextElement, tasks.get(i).getTaskName());
+                        if (userTaskOptional.isPresent()) {
+                            root.getNextNodes().add(build(bpmnModel, flowMap, bpmnModel.getMainProcess().getFlowElement(userTaskOptional.get().getTargetRef()), tasks));
+                            root.setVariables(parseElExpression(sequenceFlow.getConditionExpression()));
+                            parseElExpression(userTaskOptional.get().getConditionExpression()).forEach((s, o) -> root.getVariables().putIfAbsent(s, o));
+                            return root;
+                        }
+                    }
+                    if ((tasks.get(i).getTaskName().equals(bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef()).getName()))) {
                         root.getNextNodes().add(build(bpmnModel, flowMap, bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef()), tasks));
                         root.setVariables(parseElExpression(sequenceFlow.getConditionExpression()));
                         return root;
                     }
                 }
             }
+            throw new RuntimeException("Must be at least one choice");
         } else {
             if (nextFlow instanceof ParallelGateway) {
                 for (SequenceFlow sequenceFlow : flowMap.get(nextFlow)) {
