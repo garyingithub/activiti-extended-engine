@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @Component
 public class ActivitiUtil {
@@ -89,16 +90,21 @@ public class ActivitiUtil {
 
 
     private Optional<SequenceFlow> getGatewayFollowingTaskByName(Process process, Gateway gateway, String taskName) {
-        // TODO 只能处理两级
-        for (SequenceFlow flow : gateway.getOutgoingFlows()) {
-            FlowElement element = process.getFlowElement(flow.getTargetRef());
+        // TODO 不能处理多个Gateway嵌套
+        // 使用广度优先搜索分支
+        Queue<SequenceFlow> sequenceFlowQueue = new ArrayDeque<>();
+        sequenceFlowQueue.addAll(gateway.getOutgoingFlows());
+
+        while (!sequenceFlowQueue.isEmpty()) {
+            SequenceFlow sequenceFlow = sequenceFlowQueue.poll();
+            FlowElement element = process.getFlowElement(sequenceFlow.getTargetRef());
             if (element instanceof UserTask) {
                 if (taskName.equals(element.getName())) {
-                    return Optional.of(flow);
+                    return Optional.of(sequenceFlow);
                 }
             } else {
                 if (element instanceof Gateway) {
-                    return getGatewayFollowingTaskByName(process, gateway, taskName);
+                    sequenceFlowQueue.addAll(((Gateway) element).getOutgoingFlows());
                 } else {
                     throw new RuntimeException("Not supported");
                 }
@@ -126,7 +132,10 @@ public class ActivitiUtil {
                         if (userTaskOptional.isPresent()) {
                             root.getNextNodes().add(build(bpmnModel, flowMap, bpmnModel.getMainProcess().getFlowElement(userTaskOptional.get().getTargetRef()), tasks));
                             root.setVariables(parseElExpression(sequenceFlow.getConditionExpression()));
-                            parseElExpression(userTaskOptional.get().getConditionExpression()).forEach((s, o) -> root.getVariables().putIfAbsent(s, o));
+                            // TODO 若是多重循环嵌套，不能获取所有的表达式
+                            String conditionExpression = userTaskOptional.get().getConditionExpression();
+                            if (StringUtils.isNoneBlank(conditionExpression))
+                                parseElExpression(userTaskOptional.get().getConditionExpression()).forEach((s, o) -> root.getVariables().putIfAbsent(s, o));
                             return root;
                         }
                     }

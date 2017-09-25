@@ -35,6 +35,9 @@ public abstract class Simulator {
         this.instanceList = instanceList;
     }
 
+    protected Simulator() {
+
+    }
     public Simulator(File file) {
         this.logFile = file;
         SAXBuilder builder = new SAXBuilder();

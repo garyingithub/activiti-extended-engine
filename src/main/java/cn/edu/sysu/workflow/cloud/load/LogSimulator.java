@@ -16,7 +16,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @ComponentScan(basePackages = "cn.edu.sysu.workflow.cloud.load")
@@ -34,18 +36,29 @@ public class LogSimulator {
 
         List<ActivitiSimuluator> activitiSimuluators = new ArrayList<>();
 
-        Arrays.stream(processDefinitionFiles).forEach(new Consumer<File>() {
-            @Override
-            public void accept(File file) {
-                String fileName = file.getName().substring(0, file.getName().indexOf('.'));
-                File logFile = new File(Main.class.getClassLoader().getResource("logs/" + fileName + ".mxml").getPath());
+        Arrays.stream(processDefinitionFiles).forEach(file -> {
+            String fileName = file.getName().substring(0, file.getName().indexOf('.'));
+            File logFile = new File(Main.class.getClassLoader().getResource("logs/" + fileName + ".mxml").getPath());
+
+            for (int i = 0; i < 5; i++) {
                 activitiSimuluators.add(new ActivitiSimuluator(file, logFile, httpConfig, activitiUtil, simulatorUtil));
             }
         });
 
-        activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
 
-
+//        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+//        for(int i = 0; i < activitiSimuluators.size(); i++) {
+//            final int pos = i;
+//            executor.execute(() -> activitiSimuluators.get(pos).simulate());
+//        }
+        while (true) {
+            activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
+            try {
+                TimeUnit.MINUTES.sleep(2);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 //        ActivitiSimuluator activitiSimuluator = applicationContext.getBean(ActivitiSimuluator.class);
 //        activitiSimuluator.simulate();
 //        while (true) {
@@ -61,7 +74,7 @@ public class LogSimulator {
     public HttpConfig httpConfig() {
         // TODO 可在配置文件中配置
         HttpConfig httpConfig = new HttpConfig();
-        httpConfig.setHost("tencent");
+        httpConfig.setHost("stack");
         httpConfig.setPort("8081");
         return httpConfig;
     }

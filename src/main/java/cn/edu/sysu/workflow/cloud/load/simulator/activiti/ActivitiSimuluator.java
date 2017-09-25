@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -38,36 +39,33 @@ public class ActivitiSimuluator extends Simulator {
 
     @Override
     public void simulate() {
-        for (int i = 0; i < 1; i++) {
-            instanceList.forEach(processInstance -> processInstance.getTasks().forEach(task -> task.setAvailable(true)));
+//        for (int i = 0; i < 1; i++) {
+        instanceList.forEach(processInstance -> processInstance.getTasks().forEach(task -> task.setAvailable(true)));
 //            ProcessInstance processInstance = instanceList.get(2);
-            instanceList.sort((o1, o2) -> Long.compare(o1.getTasks().get(0).getStart(), o2.getTasks().get(0).getStart()));
-            ProcessInstance lastInstance = null;
+        instanceList.sort(Comparator.comparingLong(o -> o.getTasks().get(0).getStart()));
+        ProcessInstance lastInstance = null;
 
-            instanceList.forEach(processInstance -> {
-                if (lastInstance != null) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(processInstance.getTasks().get(0).getStart() - lastInstance.getTasks().get(0).getStart());
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+
+        for (ProcessInstance processInstance : instanceList) {
+            if (lastInstance != null) {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(processInstance.getTasks().get(0).getStart() - lastInstance.getTasks().get(0).getStart());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-                TraceNode root = activitiUtil.buildTrace(model, processInstance);
-                final long start = System.currentTimeMillis();
-                final String instanceId = getEngine().startProcess(processInstance.getDefinitionId(), null);
-                logger.info("process of {} {} starts !", getLogFile().getName(), instanceId);
-                getEngine().executeTrace(instanceId, root);
-                long end = System.currentTimeMillis();
-                logger.info("spend {} milliseconds", end - start);
-//                long sleepTime = 1000 / rate - (end - start) >= 0 ? 1000 / rate - (end - start) : 0;
-//                try {
-//
-////                    TimeUnit.MILLISECONDS.sleep(sleepTime);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-            });
-            logger.info("finish starting the {}th process instance", i);
+            }
+            TraceNode root = activitiUtil.buildTrace(model, processInstance);
+            final long start = System.currentTimeMillis();
+            final String instanceId = getEngine().startProcess(processInstance.getDefinitionId(), null);
+            logger.info("process of {} {} starts !", getLogFile().getName(), instanceId);
+            getEngine().executeTrace(instanceId, root);
+            long end = System.currentTimeMillis();
+            logger.info("spend {} milliseconds", end - start);
+            lastInstance = processInstance;
         }
+
+        logger.info("finish starting the process instances");
+
     }
+
 }
