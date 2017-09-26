@@ -89,28 +89,28 @@ public class ActivitiUtil {
     }
 
 
-    private Optional<SequenceFlow> getGatewayFollowingTaskByName(Process process, Gateway gateway, String taskName) {
-        // TODO 不能处理多个Gateway嵌套
-        // 使用广度优先搜索分支
-        Queue<SequenceFlow> sequenceFlowQueue = new ArrayDeque<>();
-        sequenceFlowQueue.addAll(gateway.getOutgoingFlows());
-
-        while (!sequenceFlowQueue.isEmpty()) {
-            SequenceFlow sequenceFlow = sequenceFlowQueue.poll();
-            FlowElement element = process.getFlowElement(sequenceFlow.getTargetRef());
-            if (element instanceof UserTask) {
-                if (taskName.equals(element.getName())) {
-                    return Optional.of(sequenceFlow);
+    // 使用深度优先搜索查找任务
+    private void getFollowingSequenceFlowsByTaskName(Process process, Gateway gateway, String taskName, List<SequenceFlow> result, List<SequenceFlow> temp) {
+        // TODO Exclusive Gateway不能处理多个变量
+        for (SequenceFlow sequenceFlow : gateway.getOutgoingFlows()) {
+            temp.add(sequenceFlow);
+            FlowElement nextElement = process.getFlowElement(sequenceFlow.getTargetRef());
+            if (nextElement instanceof UserTask) {
+                if (taskName.equals(nextElement.getName())) {
+                    if (result.size() == 0 || temp.size() < result.size()) {
+                        result.clear();
+                        result.addAll(temp);
+                    }
                 }
             } else {
-                if (element instanceof Gateway) {
-                    sequenceFlowQueue.addAll(((Gateway) element).getOutgoingFlows());
+                if (nextElement instanceof Gateway) {
+                    getFollowingSequenceFlowsByTaskName(process, (Gateway) nextElement, taskName, result, temp);
                 } else {
-                    throw new RuntimeException("Not supported");
+                    throw new RuntimeException("Not supported here");
                 }
             }
+            temp.remove(temp.size() - 1);
         }
-        return Optional.empty();
     }
 
     private TraceNode build(
@@ -128,14 +128,26 @@ public class ActivitiUtil {
                 for (SequenceFlow sequenceFlow : flowMap.get(nextFlow)) {
                     FlowElement nextElement = bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef());
                     if (nextElement instanceof Gateway) {
-                        Optional<SequenceFlow> userTaskOptional = getGatewayFollowingTaskByName(bpmnModel.getMainProcess(), (Gateway) nextElement, tasks.get(i).getTaskName());
-                        if (userTaskOptional.isPresent()) {
-                            root.getNextNodes().add(build(bpmnModel, flowMap, bpmnModel.getMainProcess().getFlowElement(userTaskOptional.get().getTargetRef()), tasks));
-                            root.setVariables(parseElExpression(sequenceFlow.getConditionExpression()));
-                            // TODO 若是多重循环嵌套，不能获取所有的表达式
-                            String conditionExpression = userTaskOptional.get().getConditionExpression();
-                            if (StringUtils.isNoneBlank(conditionExpression))
-                                parseElExpression(userTaskOptional.get().getConditionExpression()).forEach((s, o) -> root.getVariables().putIfAbsent(s, o));
+                        List<SequenceFlow> sequenceFlows = new ArrayList<>();
+                        getFollowingSequenceFlowsByTaskName(bpmnModel.getMainProcess(), (Gateway) nextElement, tasks.get(i).getTaskName(), sequenceFlows, new ArrayList<>());
+                        if (sequenceFlows.size() > 0) {
+                            root.getNextNodes().add(build(bpmnModel, flowMap, bpmnModel.getMainProcess().getFlowElement(sequenceFlows.get(sequenceFlows.size() - 1).getTargetRef()), tasks));
+                            Map<String, Object> allConditions = new HashMap<>();
+                            sequenceFlows.forEach(sequenceFlow1 -> {
+                                if (StringUtils.isNoneBlank(sequenceFlow1.getConditionExpression())) {
+                                    parseElExpression(sequenceFlow1.getConditionExpression()).forEach(allConditions::put);
+                                }
+                            });
+
+                            root.setVariables(allConditions);
+
+                            if (StringUtils.isNoneBlank(sequenceFlow.getConditionExpression())) {
+                                if (root.getVariables() == null) {
+                                    root.setVariables(new HashMap<>());
+                                }
+                                parseElExpression(sequenceFlow.getConditionExpression()).forEach((s, o) -> root.getVariables().put(s, o));
+                            }
+
                             return root;
                         }
                     }
@@ -155,7 +167,7 @@ public class ActivitiUtil {
                     }
                 }
             } else {
-                if (!(nextFlow instanceof EndEvent)) {
+                if ((nextFlow instanceof UserTask)) {
                     root.getNextNodes().add(build(bpmnModel, flowMap, nextFlow, tasks));
                 }
             }

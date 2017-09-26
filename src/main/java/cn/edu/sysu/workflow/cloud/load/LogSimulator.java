@@ -16,8 +16,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -40,17 +38,11 @@ public class LogSimulator {
             String fileName = file.getName().substring(0, file.getName().indexOf('.'));
             File logFile = new File(Main.class.getClassLoader().getResource("logs/" + fileName + ".mxml").getPath());
 
-            for (int i = 0; i < 5; i++) {
-                activitiSimuluators.add(new ActivitiSimuluator(file, logFile, httpConfig, activitiUtil, simulatorUtil));
+            for (int i = 0; i < 1; i++) {
+                activitiSimuluators.add(new ActivitiSimuluator(file, logFile, httpConfig, activitiUtil));
             }
         });
 
-
-//        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-//        for(int i = 0; i < activitiSimuluators.size(); i++) {
-//            final int pos = i;
-//            executor.execute(() -> activitiSimuluators.get(pos).simulate());
-//        }
         while (true) {
             activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
             try {
@@ -59,13 +51,6 @@ public class LogSimulator {
                 throw new RuntimeException(e);
             }
         }
-//        ActivitiSimuluator activitiSimuluator = applicationContext.getBean(ActivitiSimuluator.class);
-//        activitiSimuluator.simulate();
-//        while (true) {
-//            Scanner scanner = new Scanner(System.in);
-//
-//            ActivitiSimuluator.rate = scanner.nextInt();
-//        }
     }
 
     final Logger logger = LoggerFactory.getLogger(getClass());
@@ -74,17 +59,9 @@ public class LogSimulator {
     public HttpConfig httpConfig() {
         // TODO 可在配置文件中配置
         HttpConfig httpConfig = new HttpConfig();
-        httpConfig.setHost("stack");
+        httpConfig.setHost("localhost");
         httpConfig.setPort("8081");
         return httpConfig;
     }
 
-//    @Bean
-//    public ActivitiSimuluator activitiSimuluator(HttpConfig httpConfig, ActivitiUtil activitiUtil, SimulatorUtil simulatorUtil) {
-//        File logFile = new File(getClass().getClassLoader().getResource("logs/simulation_logs.mxml").getPath());
-//        logger.info("load log {}", logFile.getName());
-//        File definitionFIle = new File(getClass().getClassLoader().getResource("processes/parallel.bpmn.xml").getPath());
-//        logger.info("load bpmn {}", definitionFIle.getName());
-//        return new ActivitiSimuluator(definitionFIle, logFile, httpConfig, activitiUtil, simulatorUtil);
-//    }
 }
