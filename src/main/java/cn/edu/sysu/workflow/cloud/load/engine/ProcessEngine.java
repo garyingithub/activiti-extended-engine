@@ -1,5 +1,7 @@
 package cn.edu.sysu.workflow.cloud.load.engine;
 
+import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
+
 import java.io.File;
 
 public interface ProcessEngine {

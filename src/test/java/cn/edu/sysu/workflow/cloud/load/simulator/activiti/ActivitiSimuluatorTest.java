@@ -18,7 +18,7 @@ public class ActivitiSimuluatorTest {
         httpConfig.setHost("tencent");
         httpConfig.setPort("8081");
 
-        ActivitiSimuluator activitiSimuluator = new ActivitiSimuluator(definitionFIle, logFile, httpConfig, new ActivitiUtil(), new SimulatorUtil());
+        ActivitiSimuluator activitiSimuluator = new ActivitiSimuluator(definitionFIle, logFile, httpConfig, new ActivitiUtil());
         activitiSimuluator.simulate();
 
         while (true) {

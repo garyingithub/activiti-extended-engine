@@ -1,10 +1,10 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
-import cn.edu.sysu.workflow.cloud.load.engine.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
-import cn.edu.sysu.workflow.cloud.load.simulator.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.Simulator;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
 import org.activiti.bpmn.converter.util.InputStreamProvider;
@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +67,24 @@ public class ActivitiSimuluator extends Simulator {
 
         logger.info("finish starting the process instances");
 
+    }
+
+    class FileInputStreamProvider implements InputStreamProvider {
+
+        private File file;
+
+        FileInputStreamProvider(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            try {
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }

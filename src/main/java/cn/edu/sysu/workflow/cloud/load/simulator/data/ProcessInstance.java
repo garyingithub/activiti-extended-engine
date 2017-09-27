@@ -1,10 +1,18 @@
-package cn.edu.sysu.workflow.cloud.load.simulator;
+package cn.edu.sysu.workflow.cloud.load.simulator.data;
 
 import org.w3c.dom.Element;
 
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class ProcessInstance {
+
+    public static final long PERIOD = 60000;
+    private List<Task> tasks;
+    private String definitionId;
+
+    private List<Integer> frequencyList = new LinkedList<>();
     public static class Task {
         private String taskName;
 
@@ -50,9 +58,6 @@ public class ProcessInstance {
         }
     }
 
-    private List<Task> tasks;
-    private String definitionId;
-
     public String getDefinitionId() {
         return definitionId;
     }
@@ -66,6 +71,18 @@ public class ProcessInstance {
     }
 
     public void setTasks(List<Task> tasks) {
+
+
+        int size = new Long((Collections.max(tasks, Comparator.comparingLong(o -> o.end)).getEnd() - tasks.get(0).start) / PERIOD + 1).intValue();
+
+        long start = tasks.get(0).start;
+        int[] frequencyArray = new int[size];
+        tasks.forEach(task -> {
+            frequencyArray[new Long((task.start - start) / PERIOD).intValue()]++;
+            frequencyArray[new Long((task.end - start) / PERIOD).intValue()]++;
+        });
+
         this.tasks = tasks;
+        System.out.println(frequencyArray.length);
     }
 }

@@ -59,7 +59,7 @@ public class LogSimulator {
     public HttpConfig httpConfig() {
         // TODO 可在配置文件中配置
         HttpConfig httpConfig = new HttpConfig();
-        httpConfig.setHost("localhost");
+        httpConfig.setHost("stack");
         httpConfig.setPort("8081");
         return httpConfig;
     }

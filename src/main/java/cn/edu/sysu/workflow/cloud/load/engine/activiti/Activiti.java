@@ -4,7 +4,7 @@ import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelper;
 import cn.edu.sysu.workflow.cloud.load.http.async.OkHttpCallback;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
-import cn.edu.sysu.workflow.cloud.load.engine.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.slf4j.Logger;
@@ -28,17 +28,17 @@ public class Activiti implements ProcessEngine {
     private Map<String, String> headers;
     private HttpHelper httpHelper;
 
-    private HttpConfig httpConfig;
     private Logger logger = LoggerFactory.getLogger(getClass());
+    private HttpConfig httpConfig;
 
     private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
     public Activiti(HttpConfig httpConfig) {
+        this.httpConfig = httpConfig;
         this.headers = new HashMap<>();
         String base64Code = "Basic " + Base64Utils.encodeToString("admin:admin".getBytes());
         headers.put("Authorization", base64Code);
         httpHelper = new HttpHelper();
-        this.httpConfig = httpConfig;
     }
 
     private String buildUrl(String url) {

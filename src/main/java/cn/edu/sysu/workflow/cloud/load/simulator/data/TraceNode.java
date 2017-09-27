@@ -1,6 +1,4 @@
-package cn.edu.sysu.workflow.cloud.load.engine;
-
-import cn.edu.sysu.workflow.cloud.load.simulator.ProcessInstance;
+package cn.edu.sysu.workflow.cloud.load.simulator.data;
 
 import java.util.List;
 import java.util.Map;

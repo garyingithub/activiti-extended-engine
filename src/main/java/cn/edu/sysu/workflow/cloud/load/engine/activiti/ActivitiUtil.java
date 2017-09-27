@@ -1,15 +1,13 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.engine.TraceNode;
-import cn.edu.sysu.workflow.cloud.load.simulator.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import org.activiti.bpmn.model.*;
 import org.activiti.bpmn.model.Process;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 @Component
 public class ActivitiUtil {
