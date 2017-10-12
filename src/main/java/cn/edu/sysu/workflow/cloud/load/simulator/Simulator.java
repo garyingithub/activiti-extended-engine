@@ -21,10 +21,9 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class Simulator {
     private ProcessEngine engine;
-    private File logFile;
 
     protected List<ProcessInstance> instanceList = new ArrayList<>();
-    private SimulatorUtil simulatorUtil = new SimulatorUtil();
+    private SimulatorUtil simulatorUtil;
 
     protected Simulator() {
 
@@ -33,8 +32,8 @@ public abstract class Simulator {
 //    private Random random = new Random();
 
     // 日志中有些complete在assign之前。需要特殊处理
-    public Simulator(File file) {
-        this.logFile = file;
+    public Simulator(File file, ProcessEngine processEngine) {
+        this.engine = processEngine;
         SAXBuilder builder = new SAXBuilder();
         try {
             Document document = builder.build(file);
@@ -126,14 +125,12 @@ public abstract class Simulator {
         this.engine = engine;
     }
 
-    protected File getLogFile() {
-        return logFile;
-    }
-
     private long getTimeStampFromElement(Element element) {
         String timeStampString = element.getChildText("Timestamp");
-        return simulatorUtil.parseTimeStampString(timeStampString);
+        return new SimulatorUtil().parseTimeStampString(timeStampString);
     }
 
-
+    public void setSimulatorUtil(SimulatorUtil simulatorUtil) {
+        this.simulatorUtil = simulatorUtil;
+    }
 }

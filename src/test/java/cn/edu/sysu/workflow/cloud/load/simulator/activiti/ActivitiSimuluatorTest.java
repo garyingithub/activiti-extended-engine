@@ -1,6 +1,7 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
 import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
 import org.junit.Test;
@@ -18,7 +19,7 @@ public class ActivitiSimuluatorTest {
         httpConfig.setHost("tencent");
         httpConfig.setPort("8081");
 
-        ActivitiSimuluator activitiSimuluator = new ActivitiSimuluator(definitionFIle, logFile, httpConfig, new ActivitiUtil());
+        ActivitiSimuluator activitiSimuluator = new ActivitiSimuluator(definitionFIle, logFile, new Activiti(1, httpConfig), new ActivitiUtil(), new SimulatorUtil());
         activitiSimuluator.simulate();
 
         while (true) {

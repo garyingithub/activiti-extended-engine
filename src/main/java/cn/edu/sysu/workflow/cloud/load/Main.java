@@ -84,7 +84,7 @@ public class Main {
         activitiConfig.setHost("tencent");
         activitiConfig.setPort("8081");
 
-        Activiti activiti = new Activiti(activitiConfig);
+        Activiti activiti = new Activiti(1, activitiConfig);
 
         // 上传processes文件夹中的流程文件
         simulatorUtil.scanAndUploadDefinitions(activiti);
@@ -94,7 +94,7 @@ public class Main {
         List<Executor> executorList = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            instanceIdList.add(activiti.startProcess("testUserTasks", null));
+//            instanceIdList.add(activiti.startProcess("testUserTasks", null));
             executorList.add(Executors.newSingleThreadExecutor());
 //            executorList.add(new SimulatorUtil.QueueAwareThreadExecutor());
         }

@@ -16,15 +16,15 @@ public class ActivitiTest {
         config.setHost("localhost");
         config.setPort("8081");
 
-        Activiti activiti = new Activiti(config);
+        Activiti activiti = new Activiti(1, config);
         this.activiti = activiti;
 
-        instanceId = activiti.startProcess("testUserTasksWithParallel", null);
+//        instanceId = activiti.startProcess("testUserTasksWithParallel", null);
     }
 
     @Test
     public void startProcess() throws Exception {
-        activiti.startProcess("testUserTasks", null);
+//        activiti.startProcess("testUserTasks", null);
     }
 
     @Test
@@ -41,6 +41,12 @@ public class ActivitiTest {
     public void addProcessDefinition() throws Exception {
         String location = "test-engine.xml";
 //        activiti.deployProcessDefinition("test-engine", location);
+    }
+
+
+    @Test
+    public void testExecuteTask() {
+
     }
 
 }

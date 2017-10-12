@@ -4,6 +4,7 @@ import org.w3c.dom.Element;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 
 public class ProcessInstance {
@@ -12,7 +13,12 @@ public class ProcessInstance {
     private List<Task> tasks;
     private String definitionId;
 
-    private List<Integer> frequencyList = new LinkedList<>();
+    private List<Integer> frequencyList = new ArrayList<>();
+
+    public List<Integer> getFrequencyList() {
+        return frequencyList;
+    }
+
     public static class Task {
         private String taskName;
 
@@ -72,7 +78,6 @@ public class ProcessInstance {
 
     public void setTasks(List<Task> tasks) {
 
-
         int size = new Long((Collections.max(tasks, Comparator.comparingLong(o -> o.end)).getEnd() - tasks.get(0).start) / PERIOD + 1).intValue();
 
         long start = tasks.get(0).start;
@@ -81,8 +86,8 @@ public class ProcessInstance {
             frequencyArray[new Long((task.start - start) / PERIOD).intValue()]++;
             frequencyArray[new Long((task.end - start) / PERIOD).intValue()]++;
         });
-
+        Arrays.stream(frequencyArray).forEach(value -> frequencyList.add(value));
         this.tasks = tasks;
-        System.out.println(frequencyArray.length);
+//        System.out.println(frequencyArray.length);
     }
 }

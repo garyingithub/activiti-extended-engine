@@ -1,9 +1,11 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.engine.Server;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelper;
 import cn.edu.sysu.workflow.cloud.load.http.async.OkHttpCallback;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -15,13 +17,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class Activiti implements ProcessEngine {
+public class Activiti extends Server implements ProcessEngine {
 
     private final String EXTENDED_PREFIX = "/extended";
 
@@ -33,7 +36,8 @@ public class Activiti implements ProcessEngine {
 
     private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
-    public Activiti(HttpConfig httpConfig) {
+    public Activiti(int id, HttpConfig httpConfig) {
+        super(id);
         this.httpConfig = httpConfig;
         this.headers = new HashMap<>();
         String base64Code = "Basic " + Base64Utils.encodeToString("admin:admin".getBytes());
@@ -46,8 +50,8 @@ public class Activiti implements ProcessEngine {
     }
 
     @Override
-    public String startProcess(String definitionId, Object data) {
-        String url = EXTENDED_PREFIX.concat("/startProcess/").concat(definitionId);
+    public String startProcess(ProcessInstance processInstance, Object data) {
+        String url = EXTENDED_PREFIX.concat("/startProcess/").concat(processInstance.getDefinitionId());
         return this.httpHelper.postObject(buildUrl(url), data, headers);
     }
 
@@ -81,6 +85,7 @@ public class Activiti implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
+            logger.info("After Claim " + current.getTask().getTaskName() + new Date().toGMTString());
             scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MILLISECONDS);
         }
 
@@ -95,6 +100,7 @@ public class Activiti implements ProcessEngine {
                 .concat(encodePathVariable(processId))
                 .concat(encodePathVariable(root.getTask().getTaskName()));
 
+
         this.httpHelper.asyncPostObject(buildUrl(url), "", headers, new AfterClaimTaskCallback(processId, root));
     }
 
@@ -102,7 +108,7 @@ public class Activiti implements ProcessEngine {
         String url = EXTENDED_PREFIX.concat("/completeTask")
                 .concat(encodePathVariable(processId))
                 .concat(encodePathVariable(root.getTask().getTaskName()));
-        scheduledExecutorService.schedule(() -> httpHelper.asyncPostObject(buildUrl(url), root.getVariables(), headers, new AfterCompleteTaskCallback(processId, root)), root.getTask().getDuration(), TimeUnit.MILLISECONDS);
+        httpHelper.asyncPostObject(buildUrl(url), root.getVariables(), headers, new AfterCompleteTaskCallback(processId, root));
 
     }
 
@@ -121,9 +127,10 @@ public class Activiti implements ProcessEngine {
                 throw new RuntimeException(e);
             }
             if (processFinished) {
+                logger.info("After Complete " + new Date().toGMTString());
                 currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
             } else {
-                logger.info("process {} finishes", processId);
+                //logger.info("process {} finishes", processId);
             }
         }
 
