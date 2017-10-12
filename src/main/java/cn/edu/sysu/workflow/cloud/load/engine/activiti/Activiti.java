@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Activiti extends Server implements ProcessEngine {
 
@@ -78,6 +79,11 @@ public class Activiti extends Server implements ProcessEngine {
         }
     }
 
+    @Override
+    public String startProcessSimulation(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount) {
+        return "";
+    }
+
     class AfterClaimTaskCallback implements OkHttpCallback {
 
         private String processId;
@@ -85,7 +91,7 @@ public class Activiti extends Server implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
-            logger.info("After Claim " + current.getTask().getTaskName() + new Date().toGMTString());
+//            logger.info("After Claim " + current.getTask().getTaskName() + new Date().toGMTString());
             scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MILLISECONDS);
         }
 
@@ -127,7 +133,7 @@ public class Activiti extends Server implements ProcessEngine {
                 throw new RuntimeException(e);
             }
             if (processFinished) {
-                logger.info("After Complete " + new Date().toGMTString());
+//                logger.info("After Complete " + new Date().toGMTString());
                 currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
             } else {
                 //logger.info("process {} finishes", processId);

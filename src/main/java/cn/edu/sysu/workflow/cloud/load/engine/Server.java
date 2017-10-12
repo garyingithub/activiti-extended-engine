@@ -3,7 +3,6 @@ package cn.edu.sysu.workflow.cloud.load.engine;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.access.method.P;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -11,8 +10,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class Server {
 
@@ -23,7 +20,7 @@ public class Server {
     private int capacity;
     private Logger logger = LoggerFactory.getLogger(Server.class);
     //    private static long interval = 5000;
-    private static List<Server> servers = new ArrayList<>();
+    private static List<Server> servers = new CopyOnWriteArrayList<>();
     private static Executor refreshExecutor = Executors.newSingleThreadExecutor();
 
     private List<Integer> past = new ArrayList<>();
@@ -57,6 +54,15 @@ public class Server {
         }
     }
 
+    public boolean canAdd(List<Integer> load) {
+        int i = 0;
+        for (Integer aLoad : load) {
+            if (capacityList.get(i) < aLoad) return false;
+            i++;
+        }
+        return true;
+    }
+
     public void refresh() {
         this.capacityList.add(capacityList.size() - 1, capacity);
         this.past.add(capacityList.get(0));
@@ -69,13 +75,13 @@ public class Server {
                 output.append(capacity - this.past.get(i));
                 output.append(" ");
             }
-            logger.info("server {} {}", id, output.toString());
+//            logger.info("server {} {}", id, output.toString());
             if (past.size() >= 5)
                 past.clear();
         }
 
 
-        logger.info("server {} launched {} processes", id, processCount);
+//        logger.info("server {} launched {} processes", id, processCount);
         processCount.set(0);
     }
 
@@ -91,7 +97,7 @@ public class Server {
     }
 
     public Server(int id) {
-        this(id, 100, 3000);
+        this(id, 100, 16);
     }
 
     public double getStandardDiviation(Integer[] x) {
@@ -114,15 +120,6 @@ public class Server {
         if (load.size() > size) {
             throw new RuntimeException("Can not be bigger than server's size");
         }
-//        Integer[] capacityArray = new Integer[capacityList.size()];
-//        capacityList.toArray(capacityArray);
-//        int i = capacityList.size() - 1;
-//        int result = 0;
-//        for (Integer aLoad : load) {
-//            capacityArray[i] -= aLoad;
-//            i--;
-//        }
-//        return getStandardDiviation(capacityArray);
         Integer[] a = new Integer[Server.servers.get(0).size];
         Server.servers.get(0).capacityList.toArray(a);
 
@@ -148,24 +145,26 @@ public class Server {
     public long getSpace() {
         long a = 0;
         for (Integer c : capacityList) {
-            a += (capacity - c);
+            a += c;
         }
         return a;
     }
 
+    public Integer[] getCapacityArray() {
+        Integer[] capacityArray = new Integer[capacityList.size()];
+        for (int i = 0; i < capacityList.size(); i++) {
+            capacityArray[i] = capacityList.get(i);
+        }
+        return capacityArray;
+    }
+
     private int getDistance(Integer[] a, Integer[] b, int size) {
-//        int result = 0;
-//        for(int i = 0; i < size; i++) {
-//            int temp = a[i] - b[i];
-//            result +=temp * temp;
-//        }
         Integer[] aCopy = Arrays.copyOf(a, size);
         Integer[] bCopy = Arrays.copyOf(b, size);
-//        Arrays.copyOf(a, size);
+
         int aMax = Arrays.stream(aCopy).min(Comparator.naturalOrder()).get();
         int bMax = Arrays.stream(bCopy).min(Comparator.naturalOrder()).get();
         return Math.max(aMax, bMax);
-//        return result;
     }
 
 

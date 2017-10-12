@@ -11,6 +11,7 @@ import org.jdom.input.SAXBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
@@ -22,7 +23,7 @@ import static java.util.stream.Collectors.toList;
 public abstract class Simulator {
     private ProcessEngine engine;
 
-    protected List<ProcessInstance> instanceList = new ArrayList<>();
+    protected List<ProcessInstance> instanceList = new CopyOnWriteArrayList<>();
     private SimulatorUtil simulatorUtil;
 
     protected Simulator() {

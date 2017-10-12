@@ -45,20 +45,20 @@ public class DistributedLogSimulator {
             String fileName = file.getName().substring(0, file.getName().indexOf('.'));
             File logFile = new File(Main.class.getClassLoader().getResource("logs/" + fileName + ".mxml").getPath());
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 1; i++) {
                 activitiSimuluators.add(new ActivitiSimuluator(file, logFile, activiti, activitiUtil, simulatorUtil));
 //                activitiSimuluators.forEach(activitiSimuluator -> activitiSimuluator.setSimulatorUtil(simulatorUtil));
             }
         });
 
         final Random random = new Random();
-        Executor executor = Executors.newSingleThreadExecutor();
-        while (true) {
-//            activitiSimuluators.forEach(activitiSimuluator -> executor.execute(activitiSimuluator::simulate));
-            activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
+        Executor executor = Executors.newFixedThreadPool(3);
+        for (int i = 0; i < 1; i++) {
+            activitiSimuluators.forEach(activitiSimuluator -> executor.execute(activitiSimuluator::simulate));
+//            activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
 //            activitiSimuluators.get(0).simulate();
             try {
-                TimeUnit.MILLISECONDS.sleep(random.nextInt(3000000));
+                TimeUnit.MILLISECONDS.sleep(random.nextInt(300));
 
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

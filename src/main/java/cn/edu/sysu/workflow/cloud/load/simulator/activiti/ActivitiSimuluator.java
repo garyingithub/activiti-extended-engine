@@ -11,6 +11,7 @@ import cn.edu.sysu.workflow.cloud.load.simulator.Simulator;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
 import org.activiti.bpmn.converter.util.InputStreamProvider;
 import org.activiti.bpmn.model.BpmnModel;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ActivitiSimuluator extends Simulator {
 
@@ -47,8 +49,10 @@ public class ActivitiSimuluator extends Simulator {
         instanceList.sort(Comparator.comparingLong(o -> o.getTasks().get(0).getStart()));
         ProcessInstance lastInstance = null;
 
-
-        for (ProcessInstance processInstance : instanceList) {
+        AtomicLong workloads = new AtomicLong(0);
+//        for (ProcessInstance processInstance : instanceList) {
+        for (int i = 0; i < 10; i++) {
+            ProcessInstance processInstance = instanceList.get(i);
 //            ProcessInstance processInstance = instanceList.get(2);
             if (lastInstance != null) {
                 try {
@@ -58,14 +62,18 @@ public class ActivitiSimuluator extends Simulator {
                 }
             }
 
-            final long start = System.currentTimeMillis();
             final String instanceId = getEngine().startProcess(processInstance, null);
-//            logger.info("process of {} {} starts !", getLogFile().getName(), instanceId);
-            getEngine().executeTrace(instanceId, traceNodeMap.get(processInstance));
-            long end = System.currentTimeMillis();
-//            logger.info("spend {} milliseconds", end - start);
+            if (StringUtils.isNoneBlank(instanceId)) {
+                getEngine().executeTrace(instanceId, traceNodeMap.get(processInstance));
+                for (Integer frequency : processInstance.getFrequencyList()) {
+                    workloads.addAndGet(frequency);
+                }
+            }
+//            getEngine().startProcessSimulation(processInstance, null, traceNodeMap.get(processInstance), workloads);
+
             lastInstance = processInstance;
         }
+        logger.info("workloads = {}", workloads.get());
 
         logger.info("finish starting the process instances");
 
