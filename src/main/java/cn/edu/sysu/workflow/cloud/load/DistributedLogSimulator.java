@@ -54,7 +54,7 @@ public class DistributedLogSimulator {
         final Random random = new Random();
         Executor executor = Executors.newFixedThreadPool(3);
         for (int i = 0; i < 1; i++) {
-            activitiSimuluators.forEach(activitiSimuluator -> executor.execute(activitiSimuluator::simulate));
+            activitiSimuluators.forEach(ActivitiSimuluator::simulate);
 //            activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
 //            activitiSimuluators.get(0).simulate();
             try {
@@ -64,6 +64,8 @@ public class DistributedLogSimulator {
                 throw new RuntimeException(e);
             }
         }
+//        logger.info("final workload is {}", ActivitiSimuluator.count.get());
+        System.out.println("final workload is " + ActivitiSimuluator.count.get());
     }
 
     final Logger logger = LoggerFactory.getLogger(getClass());

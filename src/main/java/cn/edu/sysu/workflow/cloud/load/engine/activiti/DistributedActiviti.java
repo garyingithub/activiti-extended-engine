@@ -3,6 +3,7 @@ package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.engine.Server;
+import cn.edu.sysu.workflow.cloud.load.simulator.activiti.ActivitiSimuluator;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import org.activiti.bpmn.model.BpmnModel;
@@ -68,7 +69,7 @@ public class DistributedActiviti implements ProcessEngine {
 
     List<StartProcessCallable> bufferList = new ArrayList<>();
     long start = 0;
-    int maxBufferSize = 10;
+    int maxBufferSize = 6;
 
     private Executor executor = Executors.newFixedThreadPool(3);
 
@@ -85,19 +86,20 @@ public class DistributedActiviti implements ProcessEngine {
 
         List<Integer> result = new ArrayList<>();
         dfs(new AtomicInteger(0), 0, serverCapacityArray, instanceBuffer, new ArrayList<>(), 0, result);
-        if (result.size() > 0) {
-            for (int i = 0; i < bufferList.size(); i++) {
-                if (result.get(i) == -1) continue;
-                bufferList.get(i).setActiviti(activitiList.get(result.get(i)));
-                bufferList.get(i).run();
-            }
+//        if (result.size() > 0) {
+        for (int i = 0; i < bufferList.size(); i++) {
+            if (result.get(i) == -1) continue;
+            bufferList.get(i).setActiviti(activitiList.get(result.get(i)));
+            bufferList.get(i).run();
         }
+//        }
 
         bufferList.clear();
     }
 
 
     List<StartProcessCallable> callableBuffer = new ArrayList<>();
+
     @Override
     public String startProcess(ProcessInstance processInstance, Object data) {
         String definitionId = processInstance.getDefinitionId();
@@ -106,6 +108,7 @@ public class DistributedActiviti implements ProcessEngine {
             String processId = activitiOptional.get().startProcess(processInstance, data);
             activitiOptional.get().addLoad(processInstance.getFrequencyList());
             activitiMap.put(processId, activitiOptional.get());
+            ActivitiSimuluator.count.addAndGet(sumUpList(processInstance.getFrequencyList()));
             return processId;
         } else {
 //            logger.info("fail to add load");
@@ -127,7 +130,7 @@ public class DistributedActiviti implements ProcessEngine {
             this.activiti = activiti;
         }
 
-        public StartProcessCallable(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount) {
+        StartProcessCallable(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount) {
 //            this.activiti = activiti;
             this.processInstance = processInstance;
             this.data = data;
@@ -149,6 +152,7 @@ public class DistributedActiviti implements ProcessEngine {
     }
 
     private Logger logger = LoggerFactory.getLogger(getClass());
+
     @Override
     public String claimTask(String processId, String taskName) {
         return activitiMap.get(processId).claimTask(processId, taskName);
@@ -180,24 +184,10 @@ public class DistributedActiviti implements ProcessEngine {
 //        configs.forEach(httpConfig -> );
     }
 
-    private List<Integer> dispatchBuffer(List<List<Integer>> instanceBuffer) {
-        Integer[][] serverCapacityArray = new Integer[activitiList.size()][activitiList.get(0).getCapacityArray().length];
-        for (int i = 0; i < activitiList.size(); i++) {
-            serverCapacityArray[i] = activitiList.get(i).getCapacityArray();
-        }
-        AtomicInteger maxWorkload = new AtomicInteger(0);
-        List<Integer> result = new ArrayList<>();
-
-        dfs(maxWorkload, 0, serverCapacityArray, instanceBuffer, new ArrayList<>(), 0, result);
-
-        return result;
-
-    }
-
 
     public void dfs(AtomicInteger maxWorkload, int curWorkload, Integer[][] serverCapacityArray, List<List<Integer>> instanceBuffer, List<Integer> positions, int cur, List<Integer> result) {
         if (cur == instanceBuffer.size()) {
-            if (maxWorkload.get() < curWorkload) {
+            if (maxWorkload.get() <= curWorkload) {
                 result.clear();
                 result.addAll(positions);
                 maxWorkload.set(curWorkload);

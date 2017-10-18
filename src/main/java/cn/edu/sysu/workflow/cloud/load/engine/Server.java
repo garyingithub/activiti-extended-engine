@@ -1,5 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.engine;
 
+import cn.edu.sysu.workflow.cloud.load.simulator.activiti.ActivitiSimuluator;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,12 +58,15 @@ public class Server {
     public boolean canAdd(List<Integer> load) {
         int i = 0;
         for (Integer aLoad : load) {
-            if (capacityList.get(i) < aLoad) return false;
+            if (capacityList.get(i) < aLoad) {
+                return false;
+            }
             i++;
         }
         return true;
     }
 
+    AtomicInteger times = new AtomicInteger(0);
     public void refresh() {
         this.capacityList.add(capacityList.size() - 1, capacity);
         this.past.add(capacityList.get(0));
@@ -76,12 +80,14 @@ public class Server {
                 output.append(" ");
             }
 //            logger.info("server {} {}", id, output.toString());
-            if (past.size() >= 5)
+            if (past.size() >= 5) {
                 past.clear();
+            }
         }
 
-
+        logger.info(" times = {} workloads = {}", times.get(), ActivitiSimuluator.count.get());
 //        logger.info("server {} launched {} processes", id, processCount);
+        times.incrementAndGet();
         processCount.set(0);
     }
 
@@ -97,7 +103,7 @@ public class Server {
     }
 
     public Server(int id) {
-        this(id, 100, 16);
+        this(id, 100, 100);
     }
 
     public double getStandardDiviation(Integer[] x) {
