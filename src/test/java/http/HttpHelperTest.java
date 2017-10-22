@@ -1,6 +1,6 @@
 package http;
 
-import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import org.junit.Before;
 
 import java.util.concurrent.CountDownLatch;

@@ -1,6 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
 import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;

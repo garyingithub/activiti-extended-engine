@@ -1,17 +1,16 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.StringCallback;
 import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
-import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.Simulator;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
 import org.activiti.bpmn.converter.util.InputStreamProvider;
 import org.activiti.bpmn.model.BpmnModel;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,8 @@ public class ActivitiSimuluator extends Simulator {
     public static AtomicLong count = new AtomicLong(0);
     public ActivitiSimuluator(File definitionFile, File logFile, ProcessEngine activiti, ActivitiUtil activitiUtil, SimulatorUtil simulatorUtil) {
         super(logFile, activiti);
-        activiti.deployProcessDefinition(definitionFile.getName(), definitionFile);
+        activiti.deployProcessDefinition(definitionFile.getName(), definitionFile, result -> {
+        });
         BpmnXMLConverter bpmnXMLConverter = new BpmnXMLConverter();
         InputStreamProvider provider = new FileInputStreamProvider(definitionFile);
         model = bpmnXMLConverter.convertToBpmnModel(provider, false, false);
@@ -70,7 +70,13 @@ public class ActivitiSimuluator extends Simulator {
 //                    workloads.addAndGet(frequency);
 //                }
 //            }
-            getEngine().startProcessSimulation(processInstance, null, traceNodeMap.get(processInstance), count);
+//            getEngine().startProcessSimulation(processInstance, null, traceNodeMap.get(processInstance), count);
+            if (!(processInstance instanceof SimulatableProcessInstance)) {
+                throw new RuntimeException("Wrong Type");
+            }
+            SimulatableProcessInstance simulatableProcessInstance = (SimulatableProcessInstance) processInstance;
+            simulatableProcessInstance.setTrace(traceNodeMap.get(processInstance));
+            getEngine().simulateProcessInstance(simulatableProcessInstance);
 
             lastInstance = processInstance;
         }

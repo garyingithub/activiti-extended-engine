@@ -1,6 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.engine.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +29,12 @@ public class ActivitiTest {
 
     @Test
     public void startTask() throws Exception {
-        activiti.claimTask(instanceId, "testUserTask");
+        activiti.claimTask(instanceId, "testUserTask", new StringCallback() {
+            @Override
+            public void call(String result) {
+
+            }
+        });
     }
 
     @Test

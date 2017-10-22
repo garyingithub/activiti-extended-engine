@@ -2,6 +2,7 @@ package cn.edu.sysu.workflow.cloud.load.simulator;
 
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -103,7 +104,7 @@ public abstract class Simulator {
                         }
                     }
                 }
-                ProcessInstance processInstance = new ProcessInstance();
+                SimulatableProcessInstance processInstance = new SimulatableProcessInstance();
                 processInstance.setDefinitionId(file.getName().substring(0, file.getName().indexOf('.')));
 //                System.out.println(instanceList.size());
                 processInstance.setTasks(tasks);

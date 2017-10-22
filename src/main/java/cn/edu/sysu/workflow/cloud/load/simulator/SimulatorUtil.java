@@ -2,6 +2,7 @@ package cn.edu.sysu.workflow.cloud.load.simulator;
 
 import cn.edu.sysu.workflow.cloud.load.Main;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.StringCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.ComponentScan;
@@ -28,7 +29,9 @@ public class SimulatorUtil {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
-        if(timeStamp == null) return 0;
+        if (timeStamp == null) {
+            return 0;
+        }
         return timeStamp.getTime();
     }
 
@@ -37,7 +40,12 @@ public class SimulatorUtil {
         File[] processDefinitionFiles = processDirectory.listFiles();
 
         logger.info("There are {} engine definitions in directory", processDefinitionFiles.length);
-        Arrays.stream(processDefinitionFiles).forEach(file -> activiti.deployProcessDefinition(file.getName(), file));
+        Arrays.stream(processDefinitionFiles).forEach(file -> activiti.deployProcessDefinition(file.getName(), file, new StringCallback() {
+            @Override
+            public void call(String result) {
+
+            }
+        }));
     }
 
 

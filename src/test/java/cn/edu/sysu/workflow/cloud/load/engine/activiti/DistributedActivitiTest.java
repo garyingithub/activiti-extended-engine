@@ -33,7 +33,9 @@ public class DistributedActivitiTest {
 
         AtomicInteger maxWorkload = new AtomicInteger(0);
         List<Integer> result = new ArrayList<>();
-        distributedActiviti.dfs(maxWorkload, 0, serverArray, instanceList, new ArrayList<>(instanceList.size()), 0, result);
+//        distributedActiviti.bufferedFirstFit(maxWorkload, 0, serverArray, instanceList, new ArrayList<>(instanceList.size()), 0, result);
+
+//        distributedActiviti.dfs(maxWorkload, 0, serverArray, instanceList, new ArrayList<>(instanceList.size()), 0, result);
         assertTrue(maxWorkload.get() >= 5);
     }
 

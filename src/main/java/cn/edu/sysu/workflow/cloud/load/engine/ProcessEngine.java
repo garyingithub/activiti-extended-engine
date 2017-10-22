@@ -1,20 +1,23 @@
 package cn.edu.sysu.workflow.cloud.load.engine;
 
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.StringCallback;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
-import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
-import org.apache.commons.lang3.StringUtils;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicLong;
 
 public interface ProcessEngine {
-    String startProcess(ProcessInstance processInstance, Object data);
+    void startProcess(ProcessInstance processInstance, Object data, StringCallback callback);
 
-    String claimTask(String processId, String taskName);
+    void claimTask(String processId, String taskName, StringCallback callback);
 
-    String deployProcessDefinition(String name, File file);
+    void completeTask(String processId, String taskName, StringCallback callback);
 
-    void executeTrace(String processId, TraceNode root);
+    void deployProcessDefinition(String name, File file, StringCallback callback);
 
-    String startProcessSimulation(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount);
+//    void executeTrace(String processId, TraceNode root);
+
+//    String startProcessSimulation(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount);
+
+    void simulateProcessInstance(SimulatableProcessInstance processInstance);
 }
