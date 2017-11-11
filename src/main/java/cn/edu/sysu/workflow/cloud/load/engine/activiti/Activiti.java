@@ -144,6 +144,8 @@ public class Activiti extends Server implements ProcessEngine {
             }
             if (processFinished) {
                 currentNode.getNextNodes().forEach(traceNode -> scheduledExecutorService.schedule(() -> asyncClaimTask(processId, traceNode), traceNode.getTask().getStart() - currentNode.getTask().getEnd(), TimeUnit.MILLISECONDS));
+            } else {
+//                System.out.println("process finishes");
             }
         }
 

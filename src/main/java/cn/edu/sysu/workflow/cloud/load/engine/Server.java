@@ -41,11 +41,12 @@ public class Server {
 
     public void addLoad(List<Integer> load) {
         processCount.getAndAdd(1);
-        if (load.size() > size) {
-            throw new RuntimeException("Can be bigger than server's size");
-        }
+//        if (load.size() > size) {
+//            throw new RuntimeException("Can be bigger than server's size");
+//        }
         int i = 0;
         for (Integer aLoad : load) {
+            if (i >= capacityList.size()) break;
             capacityList.set(i, capacityList.get(i) - aLoad);
             i++;
         }
@@ -79,7 +80,7 @@ public class Server {
     }
 
     public Server(int id) {
-        this(id, 100, 200);
+        this(id, 20, 660);
     }
 
     public long getId() {

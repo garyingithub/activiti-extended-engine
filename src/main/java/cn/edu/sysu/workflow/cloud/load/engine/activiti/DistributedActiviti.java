@@ -1,6 +1,7 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.approach.BufferedFirstFit;
+import cn.edu.sysu.workflow.cloud.load.approach.FirstFit;
 import cn.edu.sysu.workflow.cloud.load.approach.RoundRobin;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
@@ -21,15 +22,6 @@ public class DistributedActiviti implements ProcessEngine {
 
     private List<Activiti> activitiList = new ArrayList<>();
     private Map<String, Activiti> activitiMap = new HashMap<>();
-
-
-//    AtomicInteger pos = new AtomicInteger(0);
-//    LoadBalancer roundRobinBalancer = new LoadBalancer() {
-//        @Override
-//        public Optional<Activiti> chooseActiviti(ProcessInstance processInstance, List<Activiti> activitiList) {
-//            return Optional.of(activitiList.get(pos.getAndAdd(1) % activitiList.size()));
-//        }
-//    };
 
     private int maxBufferSize = 20;
 
@@ -115,91 +107,6 @@ public class DistributedActiviti implements ProcessEngine {
         }
     }
 
-
-//    public void dfs(AtomicInteger maxWorkload, int curWorkload, Integer[][] serverCapacityArray, List<List<Integer>> instanceBuffer, List<Integer> positions, int cur, List<Integer> result) {
-//        if (cur == instanceBuffer.size()) {
-//            if (maxWorkload.get() <= curWorkload) {
-//                result.clear();
-//                result.addAll(positions);
-//                maxWorkload.set(curWorkload);
-//            }
-//        } else {
-//            if (positions.size() <= cur) {
-//                positions.add(-1);
-//            }
-//            List<Integer> curInstance = instanceBuffer.get(cur);
-//            for (int i = 0; i < serverCapacityArray.length; i++) {
-//                boolean successful = true;
-//                for (int j = 0; j < curInstance.size(); j++) {
-//                    serverCapacityArray[i][j] -= curInstance.get(j);
-//                    curWorkload += curInstance.get(j);
-//                    if (serverCapacityArray[i][j] < 0) {
-//                        successful = false;
-//                    }
-//                }
-//
-//                if (successful) {
-//
-//                    positions.set(cur, i);
-//                    dfs(maxWorkload, curWorkload, serverCapacityArray, instanceBuffer, positions, cur + 1, result);
-//                }
-//
-//                for (int j = 0; j < curInstance.size(); j++) {
-//                    serverCapacityArray[i][j] += curInstance.get(j);
-//                    curWorkload -= curInstance.get(j);
-//                }
-//
-//            }
-//            positions.set(cur, -1);
-//            dfs(maxWorkload, curWorkload, serverCapacityArray, instanceBuffer, positions, cur + 1, result);
-//        }
-//
-//    }
-//
-//
-//    public void bufferedFirstFit(AtomicInteger maxWorkload, int curWorkload, Integer[][] serverCapacityArray, List<List<Integer>> instanceBuffer, List<Integer> positions, int cur, List<Integer> result) {
-//        instanceBuffer.sort((o1, o2) -> {
-//            Integer o1Max = o1.stream().max(Integer::compareTo).get();
-//            Integer o2Max = o2.stream().max(Integer::compareTo).get();
-//            Double o1Value = (double) sumUpList(o1) / o1Max;
-//            Double o2Value = (double) sumUpList(o2) / o2Max;
-//            return o1Value.compareTo(o2Value);
-//        });
-//        for(int i = 0; i < instanceBuffer.size(); i++) {
-//            for(int j = 0; j <serverCapacityArray.length; j++) {
-//                boolean success = true;
-//                for(int k = 0; k < instanceBuffer.get(i).size(); k++) {
-//                    if(instanceBuffer.get(i).get(k) > serverCapacityArray[j][k]) {
-//                        success = false;
-//                        break;
-//                    }
-//                }
-//                if(success) {
-//                    positions.add(j);
-//                    for(int k = 0; k < instanceBuffer.get(i).size(); k++) {
-//                        serverCapacityArray[j][k] -= instanceBuffer.get(i).get(k);
-//                    }
-//                    break;
-//                }
-//            }
-//            if(positions.size() < i + 1) {
-//                positions.add(-1);
-//            }
-//        }
-//        result.addAll(positions);
-//    }
-//
-//    public void firstFit(AtomicInteger maxWorkload, int curWorkload, Integer[][] serverCapacityArray, List<List<Integer>> instanceBuffer, List<Integer> positions, int cur, List<Integer> result) {
-//
-//    }
-//
-//    public void roundRobin(AtomicInteger maxWorkload, int curWorkload, Integer[][] serverCapacityArray, List<List<Integer>> instanceBuffer, List<Integer> positions, int cur, List<Integer> result) {
-//        int i = 0;
-//        while (i < instanceBuffer.size()) {
-//            result.add(i % serverCapacityArray.length);
-//            i++;
-//        }
-//    }
 
     private int sumUpList(List<Integer> list) {
         int result = 0;
