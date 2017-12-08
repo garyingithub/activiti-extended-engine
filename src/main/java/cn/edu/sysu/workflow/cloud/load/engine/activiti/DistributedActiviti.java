@@ -1,7 +1,5 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.approach.BufferedFirstFit;
-import cn.edu.sysu.workflow.cloud.load.approach.FirstFit;
 import cn.edu.sysu.workflow.cloud.load.approach.RoundRobin;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
@@ -15,7 +13,6 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 //import java.util.logging.Logger;
 
 public class DistributedActiviti implements ProcessEngine {
@@ -42,8 +39,9 @@ public class DistributedActiviti implements ProcessEngine {
         }
 
         List<Integer> result = new ArrayList<>();
-        new BufferedFirstFit().allocate(serverCapacityArray, instanceBuffer, result);
+//        new BufferedFirstFit().allocate(serverCapacityArray, instanceBuffer, result);
 //        roundRobin(new AtomicInteger(0), 0, serverCapacityArray, instanceBuffer, new ArrayList<>(), 0, result);
+        new RoundRobin().allocate(serverCapacityArray, instanceBuffer, result);
 
         for (int i = 0; i < buffer.size(); i++) {
             if (result.get(i) == -1) {

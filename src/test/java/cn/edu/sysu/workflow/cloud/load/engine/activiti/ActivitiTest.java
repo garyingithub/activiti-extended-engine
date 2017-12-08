@@ -29,12 +29,12 @@ public class ActivitiTest {
 
     @Test
     public void startTask() throws Exception {
-        activiti.claimTask(instanceId, "testUserTask", new StringCallback() {
-            @Override
-            public void call(String result) {
-
-            }
-        });
+//        activiti.claimTask(instanceId, "testUserTask", new StringCallback() {
+//            @Override
+//            public void call(String result) {
+//
+//            }
+//        });
     }
 
     @Test

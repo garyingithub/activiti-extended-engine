@@ -1,8 +1,8 @@
 package cn.edu.sysu.workflow.cloud.load;
 
-import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.DistributedActiviti;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
 import cn.edu.sysu.workflow.cloud.load.simulator.activiti.ActivitiSimuluator;
 import org.slf4j.Logger;
@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 @Configuration
 @ComponentScan(basePackages = "cn.edu.sysu.workflow.cloud.load")
@@ -43,25 +41,15 @@ public class DistributedLogSimulator {
             String fileName = file.getName().substring(0, file.getName().indexOf('.'));
             File logFile = new File(Main.class.getClassLoader().getResource("logs/" + fileName + ".mxml").getPath());
 
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 1; i++) {
                 activitiSimuluators.add(new ActivitiSimuluator(file, logFile, activiti, activitiUtil, simulatorUtil));
             }
         });
 
         final Random random = new Random();
         Executor executor = Executors.newFixedThreadPool(10);
-        for (int i = 0; i < 1; i++) {
-            activitiSimuluators.stream().forEach(new Consumer<ActivitiSimuluator>() {
-                @Override
-                public void accept(ActivitiSimuluator activitiSimuluator) {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            activitiSimuluator.simulate();
-                        }
-                    });
-                }
-            });
+        for (int i = 0; i < 3; i++) {
+            activitiSimuluators.parallelStream().forEach(activitiSimuluator -> executor.execute(activitiSimuluator::simulate));
 //            activitiSimuluators.parallelStream().forEach(ActivitiSimuluator::simulate);
         }
         System.out.println("final workload is " + ActivitiSimuluator.count.get());
@@ -71,10 +59,11 @@ public class DistributedLogSimulator {
 
     static List<HttpConfig> getHttpConfigs() {
         List<HttpConfig> configs = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 1; i++) {
             HttpConfig httpConfig = new HttpConfig();
-            httpConfig.setHost("222.200.180.59");
-            httpConfig.setPort(String.valueOf(8091 + i));
+//            httpConfig.setHost("222.200.180.59");
+            httpConfig.setHost("127.0.0.1");
+            httpConfig.setPort(String.valueOf(8081 + i));
             configs.add(httpConfig);
         }
         return configs;
