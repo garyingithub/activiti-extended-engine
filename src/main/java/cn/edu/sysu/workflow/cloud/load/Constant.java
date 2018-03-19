@@ -1,5 +1,12 @@
 package cn.edu.sysu.workflow.cloud.load;
 
+import org.activiti.bpmn.converter.util.InputStreamProvider;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,5 +33,31 @@ public class Constant {
         System.arraycopy(remainingCapacity, 1, newArray, 0, remainingCapacity.length - 1);
         newArray[remainingCapacity.length - 1] = capacity;
         remainingCapacity = newArray;
+    }
+
+    public static File getFileFromResource(String filePath) {
+        URL filePathURL = Main.class.getClassLoader().getResource(filePath);
+        if (filePathURL == null) {
+            throw new RuntimeException("No such file");
+        }
+        return new File(filePathURL.getPath());
+    }
+
+    public static class FileInputStreamProvider implements InputStreamProvider {
+
+        private File file;
+
+        public FileInputStreamProvider(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            try {
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

@@ -1,17 +1,63 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
-import cn.edu.sysu.workflow.cloud.load.simulator.data.Task;
-import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.data.Task;
+import cn.edu.sysu.workflow.cloud.load.data.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import org.activiti.bpmn.model.*;
 import org.activiti.bpmn.model.Process;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 
-@Component
-public class ActivitiUtil {
+public enum ActivitiUtil {
+
+    INSTANCE;
+    private final String EXTENDED_PREFIX = "/extended";
+
+    public String buildClaimUrl(HttpConfig httpConfig, String instanceId, String taskName) {
+
+        return String.format("%s%s%s%s%s",
+                httpConfig.getAddress(),
+                EXTENDED_PREFIX,
+                "/claimTask",
+                encodePathVariable(instanceId),
+                encodePathVariable(taskName));
+    }
+
+    public String buildCompleteUrl(HttpConfig httpConfig, String instanceId, String taskName) {
+
+        return String.format("%s%s%s%s%s",
+                httpConfig.getAddress(),
+                EXTENDED_PREFIX,
+                "/completeTask",
+                encodePathVariable(instanceId),
+                encodePathVariable(taskName));
+    }
+
+    public String buildStartProcessUrl(HttpConfig httpConfig, ProcessInstance processInstance) {
+
+        return String.format("%s%s%s%s",
+                httpConfig.getAddress(),
+                EXTENDED_PREFIX,
+                "/startProcess",
+                encodePathVariable(processInstance.getDefinitionId()));
+    }
+
+    private String encodePathVariable(String pathVariable) {
+        try {
+            return "/".concat(URLEncoder.encode(pathVariable, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String buildDeployDefinitionUrl(HttpConfig httpConfig) {
+        return String.format("%s%s", httpConfig.getAddress(), "/repository/deployments");
+    }
+
     /**
      * 将形如${number == 3} 的el表达式转化为Map, 目前仅支持==
      *

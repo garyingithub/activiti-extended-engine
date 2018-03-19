@@ -1,121 +1,83 @@
 package cn.edu.sysu.workflow.cloud.load;
 
-import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.balance.LoadBalancer;
+import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
-import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
+import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
+import cn.edu.sysu.workflow.cloud.load.log.LogExtractor;
+import org.activiti.bpmn.converter.BpmnXMLConverter;
+import org.activiti.bpmn.converter.util.InputStreamProvider;
+import org.activiti.bpmn.model.BpmnModel;
 
-import java.util.*;
-import java.util.concurrent.Executor;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.Thread.sleep;
-
-
-@Configuration
-@ComponentScan(basePackages = {"cn.edu.sysu.workflow.cloud.load"})
 public class Main {
-    static Logger logger = LoggerFactory.getLogger(Main.class);
-
-    static void runTask(String instanceId, Activiti activiti) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("continue", false);
-
-//        activiti.completeTask(instanceId, "testUserTask0", variables);
-
-    }
-
-
-    static class Simulator implements Runnable {
-
-        private long times;
-        private Activiti activiti;
-        private List<Executor> executorList;
-        private List<String> instanceIdList;
-
-        public Simulator(long times, Activiti activiti, List<Executor> executorList, List<String> instanceIdList) {
-            this.times = times;
-            this.activiti = activiti;
-            this.executorList = executorList;
-            this.instanceIdList = instanceIdList;
-        }
-
-        @Override
-        public void run() {
-            try {
-                int rate = 10;
-                while (true) {
-                    long start = System.nanoTime();
-                    final int pos = new Long(times % instanceIdList.size()).intValue();
-                    executorList.get(pos).execute(() -> runTask(instanceIdList.get(pos), activiti));
-
-                    times++;
-                    long period = new Double(Math.pow(10, 9) / rate).longValue() - (System.nanoTime() - start);
-                    System.out.println(String.valueOf(((System.nanoTime() - start) / 1000)));
-                    if (period < 0) {
-//                    throw new RuntimeException("It can't be any faster");
-                        System.out.println("---");
-                        period = 0;
-                    }
-
-                    TimeUnit.NANOSECONDS.sleep(period > 0 ? period : 0);
-                }
-
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    static volatile int rate = 250;
 
     public static void main(String[] args) {
 
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(Main.class);
-        SimulatorUtil simulatorUtil = applicationContext.getBean(SimulatorUtil.class);
+        HttpConfig httpConfig = new HttpConfig();
+        httpConfig.setHost(Constant.ENGINE_ADDRESS);
+        httpConfig.setPort(Constant.PORTS[0]);
 
-        //TODO 可在application.properties中配置
-        HttpConfig activitiConfig = new HttpConfig();
-        activitiConfig.setHost("tencent");
-        activitiConfig.setPort("8081");
+        LoadBalancer loadBalancer = new LoadBalancer(new Activiti[]{new Activiti(500, httpConfig)}, Constant.ENGINE_CAPACITY);
 
-        Activiti activiti = new Activiti(1, activitiConfig);
+        File processDirectory = new File(Main.class.getClassLoader().getResource("processes").getPath());
+        File[] processDefinitionFiles = processDirectory.listFiles();
 
-        // 上传processes文件夹中的流程文件
-        simulatorUtil.scanAndUploadDefinitions(activiti);
+        ExecutorService executor = Executors.newCachedThreadPool();
 
-        List<String> instanceIdList = new ArrayList<>();
+        AtomicInteger count = new AtomicInteger(0);
+        (Arrays.stream(processDefinitionFiles).parallel()).forEach(file -> {
+            loadBalancer.deployDefinition(file);
 
-        List<Executor> executorList = new ArrayList<>();
+            BpmnXMLConverter bpmnXMLConverter = new BpmnXMLConverter();
+            InputStreamProvider provider = new Constant.FileInputStreamProvider(file);
+            BpmnModel model = bpmnXMLConverter.convertToBpmnModel(provider, false, false);
 
-        for (int i = 0; i < 10; i++) {
-//            instanceIdList.add(activiti.startProcess("testUserTasks", null));
-            executorList.add(Executors.newSingleThreadExecutor());
-//            executorList.add(new SimulatorUtil.QueueAwareThreadExecutor());
-        }
+            String logFileName = file.getName().substring(0, file.getName().indexOf('.'));
+            System.out.println(logFileName);
+            File logFile = new File(Main.class.getClassLoader().getResource("logs/" + logFileName + ".mxml").getPath());
 
-        long times = 0;
-        try {
-            System.out.println("Please input request rate, default value is " + rate + "/s");
-            new Thread(() -> {
-                while (true) {
-                    Scanner scanner = new Scanner(System.in);
-                    rate = scanner.nextInt();
-                    System.out.println("Request rate has been modified as " + rate + "/s");
+            List<ProcessInstance> instanceList = LogExtractor.INSTANCE.extractProcessInstance(logFile);
+
+            instanceList.forEach(processInstance -> {
+                SimulatableProcessInstance instance = (SimulatableProcessInstance) processInstance;
+                instance.setTrace(ActivitiUtil.INSTANCE.buildTrace(model, processInstance));
+            });
+
+            for(int k = 0; k < 2; k++) {
+                for (int i = 0; i < instanceList.size() - 1; i++) {
+                    final int pos = i;
+                    executor.submit(() -> {
+                        loadBalancer.launchProcessInstance(instanceList.get(pos));
+                        System.out.println(count.getAndIncrement());
+                    });
+//                try {
+//                    TimeUnit.MILLISECONDS.sleep(instanceList.get(i + 1).getTasks().get(0).start - instanceList.get(i).getTasks().get(0).start);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
                 }
-            }).start();
-            Executor simulatorExecutor = Executors.newFixedThreadPool(10);
-            for (int i = 0; i < 10; i++) {
-                simulatorExecutor.execute(new Simulator(times, activiti, executorList, instanceIdList));
             }
+        });
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+
+    }
+    static File[] multiply(File[] origin, int efficient) {
+        File[] result = new File[origin.length * efficient];
+
+        for(int i = 0; i < result.length; i++) {
+            result[i] = origin[i % origin.length];
         }
+
+        return result;
     }
 }
