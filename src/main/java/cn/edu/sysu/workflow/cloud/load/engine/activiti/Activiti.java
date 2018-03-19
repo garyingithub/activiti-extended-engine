@@ -10,6 +10,8 @@ import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance
 import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import okhttp3.Call;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Base64Utils;
 
 import java.io.File;
@@ -27,6 +29,8 @@ public class Activiti extends Server implements ProcessEngine {
     private final String EXTENDED_PREFIX = "/extended";
 
     private Map<String, String> headers;
+
+    private final int[] flags = new int[]{2, 5};
 
     private final int[] weights = new int[]{2, 5, 10};
     //    private Logger logger = LoggerFactory.getLogger(getClass());
@@ -49,8 +53,9 @@ public class Activiti extends Server implements ProcessEngine {
 
     private static List<HttpHelper> helpers = new ArrayList<>();
 
+    private static final int HTTP_CONNECTIONS = 1500;
     static {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < HTTP_CONNECTIONS; i++) {
             helpers.add(new HttpHelper());
         }
     }
@@ -70,7 +75,7 @@ public class Activiti extends Server implements ProcessEngine {
     public void startProcess(ProcessInstance processInstance, Object data, StringCallback callback) {
         String url = EXTENDED_PREFIX.concat("/startProcess/").concat(processInstance.getDefinitionId());
         callback.call(getHttpHelper().postObject(buildUrl(url), data, headers));
-        addLoad(processInstance.getFrequencyList());
+//        addLoad(processInstance.getFrequencyList());
     }
 
     @Override
@@ -98,7 +103,7 @@ public class Activiti extends Server implements ProcessEngine {
     @Override
     public void simulateProcessInstance(SimulatableProcessInstance processInstance) {
         startProcess(processInstance, null, result -> executeTrace(result, processInstance.getTrace()));
-        processInstance.getFrequencyList().forEach(integer -> processedCount.addAndGet(integer));
+//        processInstance.getFrequencyList().forEach(integer -> processedCount.addAndGet(integer));
     }
 
 
@@ -117,7 +122,9 @@ public class Activiti extends Server implements ProcessEngine {
 
         @Override
         public void call(Call call, Response response) {
-            scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), current.getTask().getDuration(), TimeUnit.MILLISECONDS);
+//            logger.info("claim " + String.valueOf(claimCount.incrementAndGet()));
+
+            scheduledExecutorService.schedule(() -> asyncCompleteTask(processId, current), (current.getTask().getEnd() - current.getTask().start), TimeUnit.MILLISECONDS);
         }
 
         AfterClaimTaskCallback(String processId, TraceNode current) {
@@ -128,19 +135,31 @@ public class Activiti extends Server implements ProcessEngine {
 
     private int getWeight(String processId) {
         Integer id = Integer.parseInt(processId);
-        return weights[id % 3];
+        return weights[id % flags.length];
     }
+
+    private int getFlag(String processId) {
+        Integer id = Integer.parseInt(processId);
+        return flags[id % flags.length];
+    }
+
+    Logger logger = LoggerFactory.getLogger(getClass());
+
+    public static AtomicLong claimCount = new AtomicLong(0);
+    public static AtomicLong completeCount = new AtomicLong(0);
+
     private void asyncClaimTask(String processId, TraceNode root) {
-        String url = EXTENDED_PREFIX.concat("/claimTask").concat(String.valueOf(getWeight(processId)))
+        String url = EXTENDED_PREFIX.concat("/claimTask")//.concat(String.valueOf(getFlag(processId)))
                 .concat(encodePathVariable(processId))
-                .concat(encodePathVariable(root.getTask().getTaskName()));
-        getHttpHelper().asyncPostObject(buildUrl(url), "", headers, new AfterClaimTaskCallback(processId, root));
+                .concat(encodePathVariable(root.getTask().getTaskName()));//.concat(encodePathVariable(String.valueOf(getWeight(processId))));
+        getHttpHelper().asyncPostObject(buildUrl(url), new HashMap<>(), headers, new AfterClaimTaskCallback(processId, root));
     }
 
     private void asyncCompleteTask(String processId, TraceNode root) {
-        String url = EXTENDED_PREFIX.concat("/completeTask").concat(String.valueOf(getWeight(processId)))
+//        String url = EXTENDED_PREFIX.concat("/completeTask").concat(String.valueOf(getFlag(processId)))
+        String url = EXTENDED_PREFIX.concat("/completeTask")
                 .concat(encodePathVariable(processId))
-                .concat(encodePathVariable(root.getTask().getTaskName()));
+                .concat(encodePathVariable(root.getTask().getTaskName()));//.concat(encodePathVariable(String.valueOf(getWeight(processId))));
         getHttpHelper().asyncPostObject(buildUrl(url), root.getVariables(), headers, new AfterCompleteTaskCallback(processId, root));
 
     }
@@ -153,6 +172,8 @@ public class Activiti extends Server implements ProcessEngine {
         @Override
         public void call(Call call, Response response) {
             boolean processFinished;
+//            logger.info("complete " + String.valueOf(completeCount.incrementAndGet()));
+
             try {
                 String finishedString = response.body().string();
                 processFinished = Boolean.valueOf(finishedString);

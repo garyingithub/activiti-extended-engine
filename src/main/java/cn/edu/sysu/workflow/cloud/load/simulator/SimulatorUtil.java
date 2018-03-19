@@ -5,9 +5,7 @@ import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.StringCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
-
 
 import java.io.File;
 import java.text.ParseException;
@@ -47,6 +45,4 @@ public class SimulatorUtil {
             }
         }));
     }
-
-
 }

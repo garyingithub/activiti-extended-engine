@@ -1,7 +1,8 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.Task;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
 import org.activiti.bpmn.model.*;
 import org.activiti.bpmn.model.Process;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +58,7 @@ public class ActivitiUtil {
         return build(model, getTaskFlowsMap(model), flowElementOptional.get(), instance.getTasks());
     }
 
-    private TraceNode getCurrentNode(FlowElement startElement, List<ProcessInstance.Task> tasks) {
+    private TraceNode getCurrentNode(FlowElement startElement, List<Task> tasks) {
         if (startElement instanceof StartEvent) {
             TraceNode result = new TraceNode();
             result.setNextNodes(new ArrayList<>());
@@ -71,7 +72,7 @@ public class ActivitiUtil {
 
         int start = 0;
         for (; start < tasks.size(); start++) {
-            ProcessInstance.Task task = tasks.get(start);
+            Task task = tasks.get(start);
             if (task.isAvailable() && task.getTaskName().equals(startElement.getName())) {
                 break;
             }
@@ -115,14 +116,16 @@ public class ActivitiUtil {
             BpmnModel bpmnModel,
             Map<FlowElement, List<SequenceFlow>> flowMap,
             FlowElement startElement,
-            List<ProcessInstance.Task> tasks) {
+            List<Task> tasks) {
 
         TraceNode root = getCurrentNode(startElement, tasks);
         SequenceFlow followingSequence = flowMap.get(startElement).get(0);
         FlowElement nextFlow = bpmnModel.getMainProcess().getFlowElement(followingSequence.getTargetRef());
         if (nextFlow instanceof ExclusiveGateway) {
             for (int i = 0; i < tasks.size(); i++) {
-                if (!tasks.get(i).isAvailable()) continue;
+                if (!tasks.get(i).isAvailable()) {
+                    continue;
+                }
                 for (SequenceFlow sequenceFlow : flowMap.get(nextFlow)) {
                     FlowElement nextElement = bpmnModel.getMainProcess().getFlowElement(sequenceFlow.getTargetRef());
                     if (nextElement instanceof Gateway) {

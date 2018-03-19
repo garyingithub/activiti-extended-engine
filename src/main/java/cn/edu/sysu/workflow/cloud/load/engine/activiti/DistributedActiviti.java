@@ -1,9 +1,11 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
+import cn.edu.sysu.workflow.cloud.load.DistributedLogSimulator;
+import cn.edu.sysu.workflow.cloud.load.approach.BufferedFirstFit;
+import cn.edu.sysu.workflow.cloud.load.approach.FirstFit;
 import cn.edu.sysu.workflow.cloud.load.approach.RoundRobin;
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
-import cn.edu.sysu.workflow.cloud.load.simulator.activiti.ActivitiSimuluator;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 import org.slf4j.Logger;
@@ -25,30 +27,44 @@ public class DistributedActiviti implements ProcessEngine {
     private Executor executor = Executors.newFixedThreadPool(3);
 
     private void dispatch() {
-        if (buffer.size() < maxBufferSize) {
+        if (DistributedLogSimulator.approach > 1 && buffer.size() < maxBufferSize) {
             return;
         }
-        Integer[][] serverCapacityArray = new Integer[activitiList.size()][activitiList.get(0).getCapacityArray().length];
-        for (Integer i = 0; i < activitiList.size(); i++) {
-            serverCapacityArray[i] = activitiList.get(i).getCapacityArray();
-        }
 
-        List<List<Integer>> instanceBuffer = new ArrayList<>();
-        for (SimulatableProcessInstance simulatableProcessInstance : buffer) {
-            instanceBuffer.add(simulatableProcessInstance.getFrequencyList());
-        }
+            Integer[][] serverCapacityArray = new Integer[activitiList.size()][activitiList.get(0).getCapacityArray().length];
+            for (Integer i = 0; i < activitiList.size(); i++) {
+                serverCapacityArray[i] = activitiList.get(i).getCapacityArray();
+            }
 
-        List<Integer> result = new ArrayList<>();
+            List<int[]> instanceBuffer = new ArrayList<>();
+            for (ProcessInstance simulatableProcessInstance : buffer) {
+                instanceBuffer.add(simulatableProcessInstance.getFrequencyList());
+            }
+
+            List<Integer> result = new ArrayList<>();
+
 //        new BufferedFirstFit().allocate(serverCapacityArray, instanceBuffer, result);
 //        roundRobin(new AtomicInteger(0), 0, serverCapacityArray, instanceBuffer, new ArrayList<>(), 0, result);
-        new RoundRobin().allocate(serverCapacityArray, instanceBuffer, result);
+
+        switch (DistributedLogSimulator.approach) {
+            case 0:
+                new RoundRobin().allocate(serverCapacityArray, buffer, result);
+                break;
+            case 1:
+                new FirstFit().allocate(serverCapacityArray, buffer, result);
+                break;
+            default:
+                new BufferedFirstFit().allocate(serverCapacityArray, buffer, result);
+
+        }
+
 
         for (int i = 0; i < buffer.size(); i++) {
             if (result.get(i) == -1) {
                 continue;
             }
             final Activiti activiti = activitiList.get(result.get(i));
-            final SimulatableProcessInstance simulatableProcessInstance = buffer.get(i);
+            final SimulatableProcessInstance simulatableProcessInstance = ((SimulatableProcessInstance)(buffer.get(i)));
             executor.execute(() -> activiti.simulateProcessInstance(simulatableProcessInstance));
         }
 
@@ -66,9 +82,9 @@ public class DistributedActiviti implements ProcessEngine {
                 activitiMap.put(result, activitiOptional.get());
                 callback.call(result);
             });
-            activitiOptional.get().addLoad(processInstance.getFrequencyList());
-
-            ActivitiSimuluator.count.addAndGet(sumUpList(processInstance.getFrequencyList()));
+//            activitiOptional.get().addLoad(processInstance.getFrequencyList());
+//
+//            ActivitiSimuluator.count.addAndGet(sumUpList(processInstance.getFrequencyList()));
         }
     }
 
@@ -90,7 +106,7 @@ public class DistributedActiviti implements ProcessEngine {
         activitiList.forEach(activiti -> activiti.deployProcessDefinition(name, file, callback));
     }
 
-    List<SimulatableProcessInstance> buffer = new ArrayList<>();
+    List<ProcessInstance> buffer = new ArrayList<>();
     @Override
     public synchronized void simulateProcessInstance(SimulatableProcessInstance processInstance) {
         buffer.add(processInstance);

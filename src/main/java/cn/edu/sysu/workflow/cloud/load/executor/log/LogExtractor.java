@@ -1,9 +1,9 @@
-package cn.edu.sysu.workflow.cloud.load.simulator;
+package cn.edu.sysu.workflow.cloud.load.executor.log;
 
-import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.Task;
+import com.google.common.collect.ImmutableList;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -11,25 +11,17 @@ import org.jdom.input.SAXBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
+//import sun.awt.util.IdentityArrayList;
 
-public abstract class Simulator {
-    private ProcessEngine engine;
+public class LogExtractor {
 
-    protected List<ProcessInstance> instanceList = new CopyOnWriteArrayList<>();
-    private SimulatorUtil simulatorUtil;
+    public List<ProcessInstance> extractProcessInstance(File file) {
 
-    protected Simulator() {
-
-    }
-
-//    private Random random = new Random();
-
-    // 日志中有些complete在assign之前。需要特殊处理
-    public Simulator(File file, ProcessEngine processEngine) {
-        this.engine = processEngine;
+        List<ProcessInstance> instanceList = new ArrayList<>();
         SAXBuilder builder = new SAXBuilder();
         try {
             Document document = builder.build(file);
@@ -109,24 +101,27 @@ public abstract class Simulator {
         } catch (JDOMException | IOException e) {
             throw new RuntimeException(e);
         }
+        return ImmutableList.copyOf(instanceList);
     }
 
-    public abstract void simulate();
-
-    public ProcessEngine getEngine() {
-        return engine;
+    long parseTimeStampString(String timeStampString) {
+        timeStampString=timeStampString.substring(0,timeStampString.length()-10);
+        SimpleDateFormat format =  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        Date timeStamp;
+        try {
+            timeStamp = format.parse(timeStampString);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+        if (timeStamp == null) {
+            return 0;
+        }
+        return timeStamp.getTime();
     }
-
-    public void setEngine(ProcessEngine engine) {
-        this.engine = engine;
-    }
-
     private long getTimeStampFromElement(Element element) {
         String timeStampString = element.getChildText("Timestamp");
-        return new SimulatorUtil().parseTimeStampString(timeStampString);
+        return parseTimeStampString(timeStampString);
     }
 
-    public void setSimulatorUtil(SimulatorUtil simulatorUtil) {
-        this.simulatorUtil = simulatorUtil;
-    }
+
 }

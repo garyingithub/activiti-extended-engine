@@ -41,6 +41,7 @@ public class HttpHelper {
 
     public void asyncPostObject(String url, Object object, Map<String, String> headers, OkHttpCallback callback) {
         Request.Builder requestBuilder = new Request.Builder();
+        headers.put("Connection","close");
         headers.forEach(requestBuilder::addHeader);
         requestBuilder.url(url);
         requestBuilder.post(RequestBody.
@@ -106,4 +107,3 @@ public class HttpHelper {
     }
 
 }
-//youyuanyouyuan

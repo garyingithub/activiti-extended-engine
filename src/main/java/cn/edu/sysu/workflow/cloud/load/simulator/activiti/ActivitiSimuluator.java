@@ -1,13 +1,12 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.activiti;
 
 import cn.edu.sysu.workflow.cloud.load.engine.ProcessEngine;
-import cn.edu.sysu.workflow.cloud.load.engine.activiti.StringCallback;
+import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
+import cn.edu.sysu.workflow.cloud.load.simulator.Simulator;
 import cn.edu.sysu.workflow.cloud.load.simulator.SimulatorUtil;
+import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.simulator.data.TraceNode;
-import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
-import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
-import cn.edu.sysu.workflow.cloud.load.simulator.Simulator;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
 import org.activiti.bpmn.converter.util.InputStreamProvider;
 import org.activiti.bpmn.model.BpmnModel;
@@ -86,11 +85,11 @@ public class ActivitiSimuluator extends Simulator {
 
     }
 
-    class FileInputStreamProvider implements InputStreamProvider {
+    public static class FileInputStreamProvider implements InputStreamProvider {
 
         private File file;
 
-        FileInputStreamProvider(File file) {
+        public FileInputStreamProvider(File file) {
             this.file = file;
         }
 

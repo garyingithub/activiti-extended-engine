@@ -6,7 +6,7 @@ import java.util.Map;
 public class TraceNode {
 
     private List<TraceNode> nextNodes;
-    private ProcessInstance.Task task;
+    private Task task;
     private Map<String, Object> variables;
 
     public List<TraceNode> getNextNodes() {
@@ -18,11 +18,11 @@ public class TraceNode {
     }
 
 
-    public ProcessInstance.Task getTask() {
+    public Task getTask() {
         return task;
     }
 
-    public void setTask(ProcessInstance.Task task) {
+    public void setTask(Task task) {
         this.task = task;
     }
 

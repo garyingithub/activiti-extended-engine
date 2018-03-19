@@ -1,67 +1,39 @@
 package cn.edu.sysu.workflow.cloud.load.simulator.data;
 
-import org.w3c.dom.Element;
+import cn.edu.sysu.workflow.cloud.load.Constant;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.Predicate;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import static cn.edu.sysu.workflow.cloud.load.Constant.PERIOD;
 
 public class ProcessInstance {
 
-    public static final long PERIOD = 60000;
+    private int id;
+
+    private int timeSlot;
+
+    public ProcessInstance() {
+        this.id = Constant.INSTANCE_ID_GENERATOR.getAndAdd(1);
+    }
     private List<Task> tasks;
     private String definitionId;
 
-    private List<Integer> frequencyList = new ArrayList<>();
-
-    public List<Integer> getFrequencyList() {
-        return frequencyList;
+    public int getTimeSlot() {
+        return timeSlot;
     }
 
-    public static class Task {
-        private String taskName;
+    public void setTimeSlot(int timeSlot) {
+        this.timeSlot = timeSlot;
+    }
 
-        private long start;
-        private long end;
-        private boolean available = true;
+    private int[] frequencyList;
 
-        public String getTaskName() {
-            return taskName;
-        }
-
-        public void setTaskName(String taskName) {
-            this.taskName = taskName;
-        }
-
-        public long getDuration() {
-            return end - start;
-        }
-
-
-        public boolean isAvailable() {
-            return available;
-        }
-
-        public void setAvailable(boolean available) {
-            this.available = available;
-        }
-
-        public long getStart() {
-            return start;
-        }
-
-        public void setStart(long start) {
-            this.start = start;
-        }
-
-        public long getEnd() {
-            return end;
-        }
-
-        public void setEnd(long end) {
-            this.end = end;
-        }
+    public int[] getFrequencyList() {
+        return frequencyList;
     }
 
     public String getDefinitionId() {
@@ -78,16 +50,51 @@ public class ProcessInstance {
 
     public void setTasks(List<Task> tasks) {
 
-        int size = new Long((Collections.max(tasks, Comparator.comparingLong(o -> o.end)).getEnd() - tasks.get(0).start) / PERIOD + 1).intValue();
-
+        long end = Collections.max(tasks, Comparator.comparingLong(o -> o.end)).end;
         long start = tasks.get(0).start;
+
+        int size = Long.valueOf((end - start) / PERIOD + 1).intValue();
+
         int[] frequencyArray = new int[size];
         tasks.forEach(task -> {
-            frequencyArray[new Long((task.start - start) / PERIOD).intValue()]++;
-            frequencyArray[new Long((task.end - start) / PERIOD).intValue()]++;
+            frequencyArray[Long.valueOf((task.start - start) / PERIOD).intValue()]++;
+            frequencyArray[Long.valueOf((task.end - start) / PERIOD).intValue()]++;
         });
-        Arrays.stream(frequencyArray).forEach(value -> frequencyList.add(value));
+        this.frequencyList = frequencyArray;
         this.tasks = tasks;
-//        System.out.println(frequencyArray.length);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ProcessInstance that = (ProcessInstance) o;
+
+        return new EqualsBuilder()
+                .append(id, that.id)
+                .append(tasks, that.tasks)
+                .append(definitionId, that.definitionId)
+                .append(frequencyList, that.frequencyList)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(id)
+                .append(tasks)
+                .append(definitionId)
+                .append(frequencyList)
+                .toHashCode();
     }
 }

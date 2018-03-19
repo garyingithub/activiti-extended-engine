@@ -41,7 +41,13 @@
             <version>6.0.0</version>
         </dependency>
 
-
+        <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>24.1-jre</version>
+        <!-- or, for Android: -->
+        <!--<version>24.1-android</version>-->
+    </dependency>
         <dependency>
             <groupId>jdom</groupId>
             <artifactId>jdom</artifactId>

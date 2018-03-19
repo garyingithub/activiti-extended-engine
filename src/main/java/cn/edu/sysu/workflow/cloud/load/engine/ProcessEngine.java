@@ -15,9 +15,5 @@ public interface ProcessEngine {
 
     void deployProcessDefinition(String name, File file, StringCallback callback);
 
-//    void executeTrace(String processId, TraceNode root);
-
-//    String startProcessSimulation(ProcessInstance processInstance, Object data, TraceNode root, AtomicLong workloadCount);
-
     void simulateProcessInstance(SimulatableProcessInstance processInstance);
 }

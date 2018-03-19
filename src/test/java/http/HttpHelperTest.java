@@ -47,12 +47,14 @@ public class HttpHelperTest {
 
     @org.junit.Test
     public void get() throws Exception {
-//        int number = 8;
-//        CountDownLatch countDownLatch = new CountDownLatch(1);
-//        for (int i = 0; i < number; i++) {
-//            new Thread(new TestRunnable(countDownLatch)).start();
-//        }
-//        countDownLatch.await();
+        int number = 8;
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        for (int i = 0; i < number; i++) {
+            new Thread(new TestRunnable(countDownLatch)).start();
+        }
+        countDownLatch.await();
+//        AbstractList
+       
     }
 
 }

@@ -1,15 +1,15 @@
 package cn.edu.sysu.workflow.cloud.load.engine;
 
-import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
-import cn.edu.sysu.workflow.cloud.load.simulator.data.ProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.DistributedLogSimulator;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static cn.edu.sysu.workflow.cloud.load.Constant.PERIOD;
 
 public class Server {
 
@@ -26,9 +26,9 @@ public class Server {
             while (true) {
                 long start = System.currentTimeMillis();
                 servers.parallelStream().forEach(Server::refresh);
-                System.out.println(Activiti.processedCount);
+//                System.out.println(Activiti.processedCount);
                 try {
-                    TimeUnit.MILLISECONDS.sleep(ProcessInstance.PERIOD - (System.currentTimeMillis() - start));
+                    TimeUnit.MILLISECONDS.sleep(PERIOD - (System.currentTimeMillis() - start));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -46,7 +46,7 @@ public class Server {
 //        }
         int i = 0;
         for (Integer aLoad : load) {
-            if (i >= capacityList.size()) break;
+            if (i >= capacityList.size()) {break;}
             capacityList.set(i, capacityList.get(i) - aLoad);
             i++;
         }
@@ -80,7 +80,7 @@ public class Server {
     }
 
     public Server(int id) {
-        this(id, 20, 660);
+        this(id, 20, DistributedLogSimulator.capacity);
     }
 
     public long getId() {
