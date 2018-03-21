@@ -11,7 +11,7 @@ public class AdmitEnvironment implements TimeFollower {
     private Server server;
 
     private Tenant getTenant(ProcessInstance instance) {
-        return tenants[instance.getId() % tenants.length];
+        return tenants[Constant.getTenantId(instance)];
     }
 
     private Tenant[] tenants;
@@ -27,6 +27,8 @@ public class AdmitEnvironment implements TimeFollower {
 
     public void admitProcessInstance(ProcessInstance instance) {
         getTenant(instance).admitProcessInstance(instance);
+        getServer().deployWorkload(instance.getFrequencyList());
+
     }
 
     public void assignProcessInstance(ProcessInstance instance) {
@@ -39,16 +41,27 @@ public class AdmitEnvironment implements TimeFollower {
 
     @Override
     public void pastPeriod() {
-        Arrays.stream(tenants).forEach(tenant -> {
-            tenant.pastPeriod();
-            server.pastPeriod();
-        });
+        Arrays.stream(tenants).forEach(Tenant::pastPeriod);
         server.pastPeriod();
     }
 
     public boolean checkDominantOverload(ProcessInstance processInstance) {
         return getTenant(processInstance).checkDominantOverload(processInstance);
     }
+
+    public boolean checkOverload(ProcessInstance processInstance) {
+        for(int i = 0; i < server.getRemainingCapacity().length; i++) {
+            if(i < processInstance.getFrequencyList().length) {
+                if(server.getRemainingCapacity()[i] < processInstance.getFrequencyList()[i]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+
 
     class Tenant implements TimeFollower{
         float weight;
@@ -77,13 +90,22 @@ public class AdmitEnvironment implements TimeFollower {
         }
 
         boolean checkDominantOverload(ProcessInstance processInstance) {
-            int maxV = Arrays.stream(apply).max().getAsInt();
-            for(int i = 0 ; i < apply.length; i++) {
-                if(this.apply[i] == maxV) {
-                    return processInstance.getFrequencyList().length > i &&
-                            (gain[i] + processInstance.getFrequencyList()[i] >
-                                    Math.floor(weight * Constant.ENGINE_CAPACITY));
+//            int maxV = Arrays.stream(apply).max().getAsInt();
+//            for(int i = 0 ; i < apply.length; i++) {
+//                if(this.apply[i] == maxV) {
+//                    return processInstance.getFrequencyList().length > i &&
+//                            (gain[i] + processInstance.getFrequencyList()[i] >
+//                                    Math.floor(weight * Constant.ENGINE_CAPACITY));
+//
+//                }
+//            }
 
+            for(int i = 0; i < gain.length; i++) {
+                if(i < processInstance.getFrequencyList().length) {
+                    if(gain[i] + processInstance.getFrequencyList()[i] >
+                            Math.floor(weight * Constant.ENGINE_CAPACITY)) {
+                        return true;
+                    }
                 }
             }
             return false;

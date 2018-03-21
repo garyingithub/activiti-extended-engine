@@ -1,10 +1,9 @@
 package cn.edu.sysu.workflow.cloud.load.engine.activiti;
 
-import cn.edu.sysu.workflow.cloud.load.TimeFollower;
-import cn.edu.sysu.workflow.cloud.load.data.SimulatableProcessInstance;
+import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.data.TraceNode;
+import cn.edu.sysu.workflow.cloud.load.engine.BasicEngine;
 import cn.edu.sysu.workflow.cloud.load.engine.Server;
-import cn.edu.sysu.workflow.cloud.load.engine.WorkflowEngine;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelper;
 import cn.edu.sysu.workflow.cloud.load.http.HttpHelperSelector;
@@ -18,9 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class Activiti implements WorkflowEngine, TimeFollower {
-
-    protected Server server;
+public class Activiti extends BasicEngine {
 
     private final Map<String, String> headers;
 
@@ -33,7 +30,7 @@ public class Activiti implements WorkflowEngine, TimeFollower {
     }
 
     @Override
-    public void generateWorkload(SimulatableProcessInstance processInstance) {
+    public void generateWorkload(ProcessInstance processInstance) {
         String url = ActivitiUtil.INSTANCE.buildStartProcessUrl(httpConfig, processInstance);
         String instanceId = HttpHelperSelector.SELECTOR.select().
                 postObject(url,
@@ -100,6 +97,4 @@ public class Activiti implements WorkflowEngine, TimeFollower {
                     }
                 });
     }
-
-
 }

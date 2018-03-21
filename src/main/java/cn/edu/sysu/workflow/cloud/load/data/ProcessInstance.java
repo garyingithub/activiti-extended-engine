@@ -12,19 +12,26 @@ import static cn.edu.sysu.workflow.cloud.load.Constant.PERIOD;
 
 public class ProcessInstance {
 
-    private int id;
+    private final int id;
 
     private int timeSlot;
 
-    public ProcessInstance() {
-        this.id = Constant.INSTANCE_ID_GENERATOR.getAndAdd(1);
+    private TraceNode trace;
+
+    public TraceNode getTrace() {
+        return trace;
     }
+
+    public void setTrace(TraceNode trace) {
+        this.trace = trace;
+    }
+
+    public ProcessInstance() {
+        this.id = Math.abs(Constant.RANDOM.nextInt());
+    }
+
     private List<Task> tasks;
     private String definitionId;
-
-    public int getTimeSlot() {
-        return timeSlot;
-    }
 
     public void setTimeSlot(int timeSlot) {
         this.timeSlot = timeSlot;

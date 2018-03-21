@@ -2,7 +2,6 @@ package cn.edu.sysu.workflow.cloud.load;
 
 import cn.edu.sysu.workflow.cloud.load.balance.LoadBalancer;
 import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
-import cn.edu.sysu.workflow.cloud.load.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
 import cn.edu.sysu.workflow.cloud.load.http.HttpConfig;
@@ -47,9 +46,8 @@ public class Main {
 
             List<ProcessInstance> instanceList = LogExtractor.INSTANCE.extractProcessInstance(logFile);
 
-            instanceList.forEach(processInstance -> {
-                SimulatableProcessInstance instance = (SimulatableProcessInstance) processInstance;
-                instance.setTrace(ActivitiUtil.INSTANCE.buildTrace(model, processInstance));
+            instanceList.forEach(instance -> {
+                instance.setTrace(ActivitiUtil.INSTANCE.buildTrace(model, instance));
             });
 
             for(int k = 0; k < 2; k++) {

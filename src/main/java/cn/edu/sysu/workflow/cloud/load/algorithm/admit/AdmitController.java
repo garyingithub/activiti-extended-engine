@@ -11,8 +11,8 @@ public interface AdmitController {
         boolean[] result = new boolean[processInstances.size()];
 
         for(int i = 0; i < processInstances.size(); i++) {
-            boolean ok = admitEnvironment.getServer().deployWorkload(processInstances.get(i).getFrequencyList());
-            result[i] = ok;
+//            boolean ok = admitEnvironment.getServer().deployWorkload(processInstances.get(i).getFrequencyList());
+            result[i] = true;
         }
         return result;
     }

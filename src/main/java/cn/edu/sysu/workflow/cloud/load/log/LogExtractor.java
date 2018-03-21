@@ -1,7 +1,6 @@
 package cn.edu.sysu.workflow.cloud.load.log;
 
 import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
-import cn.edu.sysu.workflow.cloud.load.data.SimulatableProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.data.Task;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -87,7 +86,7 @@ public enum LogExtractor {
                         }
                     }
                 }
-                SimulatableProcessInstance processInstance = new SimulatableProcessInstance();
+                ProcessInstance processInstance = new ProcessInstance();
                 processInstance.setDefinitionId(file.getName().substring(0, file.getName().indexOf('.')));
                 processInstance.setTasks(tasks);
                 instanceList.add(processInstance);
