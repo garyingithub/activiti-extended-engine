@@ -19,6 +19,8 @@ public class LoadBalancer implements TimeFollower {
     private AdmitController admitController = new AdmitController() {};
 
     private List<ProcessInstance> buffer = new ArrayList<>(Constant.BUFFER_SIZE);
+    private List<AsynCallback> callbackBuffer = new ArrayList<>(Constant.BUFFER_SIZE);
+
 
     private AdmitEnvironment admitEnvironment;
 
@@ -27,6 +29,7 @@ public class LoadBalancer implements TimeFollower {
     public synchronized void launchProcessInstance(ProcessInstance processInstance) {
 
         buffer.add(processInstance);
+
         if(buffer.size() == Constant.BUFFER_SIZE) {
             boolean[] admits = admitController.admitControl(admitEnvironment, buffer);
 
@@ -46,7 +49,8 @@ public class LoadBalancer implements TimeFollower {
     public synchronized int launchProcessInstance(ProcessInstance processInstance, AsynCallback callback) {
 
         buffer.add(processInstance);
-        if(buffer.size() == Constant.BUFFER_SIZE) {
+        callbackBuffer.add(callback);
+        if( buffer.size() == Constant.BUFFER_SIZE) {
             boolean[] admits = admitController.admitControl(admitEnvironment, buffer);
 
             List<ProcessInstance> admittedInstances = new ArrayList<>();
@@ -57,10 +61,11 @@ public class LoadBalancer implements TimeFollower {
             }
 
             System.out.println("start schedule");
-            int result = scheduler.schedule(scheduleEnvironment, admittedInstances, callback);
+            int result = scheduler.schedule(scheduleEnvironment, admittedInstances, callbackBuffer);
             System.out.println("end schedule");
 
             buffer.clear();
+            callbackBuffer.clear();
             return result;
         }
         return 0;

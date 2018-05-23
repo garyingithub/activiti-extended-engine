@@ -16,12 +16,13 @@ public class AdmitEnvironment implements TimeFollower {
 
     private Tenant[] tenants;
 
-
     public AdmitEnvironment(int capacity) {
         this.server = new Server(capacity);
         tenants = new Tenant[Constant.TENANT_NUMBER];
         for(int i = 0; i < tenants.length; i++) {
-            tenants[i] = new Tenant(Constant.TENANT_WEIGHTS[i]);
+//            tenants[i] = new Tenant(Constant.TENANT_WEIGHTS[i]);
+            tenants[i] = new Tenant(Constant.TENANT_WEIGHTS[i % Constant.TENANT_WEIGHTS.length] );
+
         }
     }
 
@@ -49,10 +50,18 @@ public class AdmitEnvironment implements TimeFollower {
         return getTenant(processInstance).checkDominantOverload(processInstance);
     }
 
+    public boolean checkWeightedOverload(ProcessInstance processInstance) {
+        return getTenant(processInstance).checkWeightedOverload(processInstance);
+    }
+
+    public boolean checkWeightedOverload2(ProcessInstance processInstance) {
+        return getTenant(processInstance).checkWeightedOverload2(processInstance);
+    }
+
     public boolean checkOverload(ProcessInstance processInstance) {
-        for(int i = 0; i < server.getRemainingCapacity().length; i++) {
+        for(int i = 0; i < server.getCapacityCopy().length; i++) {
             if(i < processInstance.getFrequencyList().length) {
-                if(server.getRemainingCapacity()[i] < processInstance.getFrequencyList()[i]) {
+                if(server.getCapacityCopy()[i] < processInstance.getFrequencyList()[i]) {
                     return true;
                 }
             }
@@ -90,20 +99,13 @@ public class AdmitEnvironment implements TimeFollower {
         }
 
         boolean checkDominantOverload(ProcessInstance processInstance) {
-//            int maxV = Arrays.stream(apply).max().getAsInt();
-//            for(int i = 0 ; i < apply.length; i++) {
-//                if(this.apply[i] == maxV) {
-//                    return processInstance.getFrequencyList().length > i &&
-//                            (gain[i] + processInstance.getFrequencyList()[i] >
-//                                    Math.floor(weight * Constant.ENGINE_CAPACITY));
-//
-//                }
-//            }
 
             for(int i = 0; i < gain.length; i++) {
                 if(i < processInstance.getFrequencyList().length) {
-                    if(gain[i] + processInstance.getFrequencyList()[i] >
-                            Math.floor(weight * Constant.ENGINE_CAPACITY)) {
+                    int nextGain = gain[i] + processInstance.getFrequencyList()[i];
+
+                    if(nextGain >
+                            Math.floor(weight * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)) {
                         return true;
                     }
                 }
@@ -111,6 +113,64 @@ public class AdmitEnvironment implements TimeFollower {
             return false;
         }
 
+//        private double[] weights = new double[] {2, 1,5, 1.33, 1.25, 1.2, 1.17, 1.14};
+        private double[] weights = new double[] {2, 1.5, 1.25};
+
+        boolean checkWeightedOverload(ProcessInstance processInstance) {
+            for(int i = 0; i < gain.length; i++) {
+                if(i < processInstance.getFrequencyList().length) {
+                    int nextGain = gain[i] + processInstance.getFrequencyList()[i];
+
+                    double slotWeight = i < weights.length ? weights[i] : 1;
+                    if(nextGain > slotWeight * Math.floor(weight * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)) {
+                        return true;
+                    }
+//                    int threshold = Math.floorDiv(server.getCapacity(), 10);
+//
+//                    if(server.getCapacityCopy()[i] < threshold) {
+//                        if(nextGain > Math.floor(weight * Constant.ENGINE_CAPACITY)) {
+//                            return true;
+//                        }
+//                    } else {
+//                        double slotWeight = i < weights.length ? weights[i] : 1;
+//                        if(nextGain > slotWeight * Math.floor(weight * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)) {
+//                            return true;
+//                        }
+//                    }
+
+                }
+            }
+            return false;
+        }
+
+//        private double[] weights = new double[] {2, 1.5, 1.25};
+
+        boolean checkWeightedOverload2(ProcessInstance processInstance) {
+            for(int i = 0; i < gain.length; i++) {
+                if(i < processInstance.getFrequencyList().length) {
+                    int nextGain = gain[i] + processInstance.getFrequencyList()[i];
+//
+//                    double slotWeight = i < weights.length ? weights[i] : 1;
+//                    if(nextGain > slotWeight * Math.floor(weight * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)) {
+//                        return true;
+//                    }
+                    int threshold = Math.floorDiv(server.getCapacity(), 10);
+
+                    if(server.getCapacityCopy()[i] < threshold) {
+                        if(nextGain > Math.floor(weight * Constant.ENGINE_CAPACITY)) {
+                            return true;
+                        }
+                    } else {
+                        double slotWeight = i < weights.length ? weights[i] : 1;
+                        if(nextGain > slotWeight * Math.floor(weight * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)) {
+                            return true;
+                        }
+                    }
+
+                }
+            }
+            return false;
+        }
 
         @Override
         public void pastPeriod() {

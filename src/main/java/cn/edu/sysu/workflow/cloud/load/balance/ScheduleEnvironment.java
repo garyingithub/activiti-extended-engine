@@ -30,6 +30,10 @@ public class ScheduleEnvironment implements TimeFollower {
     public void addEngine() {
         this.pool.add(new SimulateActiviti(Constant.ENGINE_CAPACITY, new HttpConfig()));
     }
+
+    public void addEngine(BasicEngine engine) {
+        this.pool.add(engine);
+    }
     public ScheduleEnvironment(BasicEngine[] pool) {
         this.pool = new ArrayList<>();
         for(BasicEngine engine : pool) {

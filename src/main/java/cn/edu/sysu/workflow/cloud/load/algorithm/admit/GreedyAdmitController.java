@@ -11,17 +11,13 @@ public class GreedyAdmitController implements AdmitController {
     @Override
     public boolean[] admitControl(AdmitEnvironment admitEnvironment, List<ProcessInstance> processInstances) {
 
-        processInstances.sort(new Comparator<ProcessInstance>() {
-            @Override
-            public int compare(ProcessInstance o1, ProcessInstance o2) {
-                return Integer.compare(Arrays.stream(o2.getFrequencyList()).max().getAsInt(), Arrays.stream(o1.getFrequencyList()).max().getAsInt());
-            }
-        });
+
         boolean[] result = new boolean[processInstances.size()];
         for(int i = 0; i < processInstances.size(); i++) {
             ProcessInstance processInstance = processInstances.get(i);
             admitEnvironment.assignProcessInstance(processInstance);
-            if(!admitEnvironment.getServer().checkOverload(processInstance.getFrequencyList())) {
+            if(!admitEnvironment.getServer().
+                    checkOverload(processInstance.getFrequencyList())) {
                 if(!admitEnvironment.checkDominantOverload(processInstance)) {
                     admitEnvironment.admitProcessInstance(processInstance);
 
@@ -35,5 +31,10 @@ public class GreedyAdmitController implements AdmitController {
         }
 
         return result;
+    }
+
+    @Override
+    public String getName() {
+        return "MMFB";
     }
 }

@@ -10,14 +10,14 @@ import java.util.List;
 public class RealFirstFitScheduler implements Scheduler {
 
     @Override
-    public int schedule(ScheduleEnvironment environment, List<ProcessInstance> processInstances, AsynCallback callback) {
+    public int schedule(ScheduleEnvironment environment, List<ProcessInstance> processInstances, List<AsynCallback> callbacks) {
 
         for(int i = 0; i < processInstances.size(); i++) {
             ProcessInstance instance = processInstances.get(i);
-            boolean ok = internal(environment, instance, callback);;
+            boolean ok = internal(environment, instance, callbacks.get(i));;
             while (!ok) {
                 environment.addEngine();
-                ok = internal(environment, instance, callback);
+                ok = internal(environment, instance, callbacks.get(i));
             }
         }
         return environment.getPool().size();
@@ -26,7 +26,7 @@ public class RealFirstFitScheduler implements Scheduler {
 
     private boolean internal(ScheduleEnvironment environment, ProcessInstance instance, AsynCallback callback) {
         for(int j = 0; j < environment.getPool().size(); j++) {
-            if(environment.getPool().get(j).getRemainingCapacity()[0] > Math.floorDiv(Constant.ENGINE_CAPACITY * 1, 10)) {
+            if(environment.getPool().get(j).getCapacityCopy()[0] > Constant.ENGINE_CAPACITY * 0.1) {
                 environment.getPool().get(j).generateWorkload(instance);
                 callback.call(instance, environment.getPool().get(j));
                 return true;
@@ -34,5 +34,10 @@ public class RealFirstFitScheduler implements Scheduler {
 
         }
         return false;
+    }
+
+    @Override
+    public String getName() {
+        return "CBS";
     }
 }

@@ -19,8 +19,8 @@ public abstract class BasicEngine implements WorkflowEngine, TimeFollower {
         return server.checkOverload(processInstance.getFrequencyList());
     }
 
-    public int[] getRemainingCapacity() {
-        return Arrays.copyOf(server.getRemainingCapacity(), server.getRemainingCapacity().length);
+    public int[] getCapacityCopy() {
+        return Arrays.copyOf(server.getCapacityCopy(), server.getCapacityCopy().length);
     }
 
     @Override

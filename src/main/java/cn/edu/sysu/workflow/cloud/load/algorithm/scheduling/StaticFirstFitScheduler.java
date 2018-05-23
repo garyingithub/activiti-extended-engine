@@ -8,13 +8,15 @@ import cn.edu.sysu.workflow.cloud.load.engine.BasicEngine;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class StaticFirstFitScheduler implements Scheduler {
 
+    static Random random = new Random();
     @Override
     public int schedule(ScheduleEnvironment environment,
                         List<ProcessInstance> processInstances,
-                        AsynCallback callback) {
+                        List<AsynCallback> callbacks) {
 
         ProcessInstance instance = processInstances.get(0);
         for(BasicEngine basicEngine : environment.getPool()) {
@@ -27,7 +29,7 @@ public class StaticFirstFitScheduler implements Scheduler {
             }
             if(!basicEngine.checkOverload(instance)) {
                 basicEngine.generateWorkload(instance);
-                callback.call(instance, basicEngine);
+                callbacks.get(0).call(instance, basicEngine);
                 return 1;
             }
         }

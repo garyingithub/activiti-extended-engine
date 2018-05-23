@@ -64,7 +64,7 @@ public class DecreasingAdmitController implements AdmitController {
     }
 
     private boolean[] controlTenant(float weight, Server server, List<ProcessInstance> instances) {
-        int[] volumes = server.getRemainingCapacity();
+        int[] volumes = server.getCapacityCopy();
         int[] share = new int[volumes.length];
         int[] gain = new int[volumes.length];
 
@@ -109,7 +109,7 @@ public class DecreasingAdmitController implements AdmitController {
         int dominantTimeSlot;
 
         public Tenant(List<ProcessInstance> processInstances, Server server) {
-            int[] remaining = server.getRemainingCapacity();
+            int[] remaining = server.getCapacityCopy();
 
             int[] wanted = new int[remaining.length];
 

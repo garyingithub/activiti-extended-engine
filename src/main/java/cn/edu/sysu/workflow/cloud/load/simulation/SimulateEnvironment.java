@@ -30,8 +30,8 @@ public class SimulateEnvironment {
         int[][] result = new int[serverMap.size()][];
 
         int count = 0;
-        for(long key : serverMap.keySet()) {
-            result[count] = serverMap.get(key).history;
+        for(Map.Entry<Long, SimulateServer> entry : serverMap.entrySet()) {
+            result[count] = entry.getValue().history;
             count++;
         }
 

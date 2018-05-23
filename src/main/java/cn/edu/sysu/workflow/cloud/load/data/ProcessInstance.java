@@ -14,6 +14,10 @@ public class ProcessInstance {
 
     private final int id;
 
+    public int getTimeSlot() {
+        return timeSlot;
+    }
+
     private int timeSlot;
 
     private TraceNode trace;
@@ -27,7 +31,7 @@ public class ProcessInstance {
     }
 
     public ProcessInstance() {
-        this.id = Math.abs(Constant.RANDOM.nextInt());
+        this.id = Math.abs(Constant.RANDOM.nextInt(5000));
     }
 
     private List<Task> tasks;
@@ -67,6 +71,12 @@ public class ProcessInstance {
             frequencyArray[Long.valueOf((task.start - start) / PERIOD).intValue()]++;
             frequencyArray[Long.valueOf((task.end - start) / PERIOD).intValue()]++;
         });
+        for(int i = 0; i < frequencyArray.length; i++) {
+            frequencyArray[i] += Math.random() * 35;
+            if(frequencyArray[i] > Constant.ENGINE_CAPACITY) {
+                frequencyArray[i] = Constant.ENGINE_CAPACITY;
+            }
+        }
         this.frequencyList = frequencyArray;
         this.tasks = tasks;
     }

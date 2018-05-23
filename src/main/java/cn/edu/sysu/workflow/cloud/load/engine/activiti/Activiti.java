@@ -37,8 +37,12 @@ public class Activiti extends BasicEngine {
                         new HashMap<>(), headers);
 
         executeTrace(instanceId, processInstance.getTrace());
-//        new cn.edu.sysu.workflow.cloud.load.engine.activiti.Activiti(3, httpConfig).simulateProcessInstance(processInstance);
         server.deployWorkload(processInstance.getFrequencyList());
+    }
+
+    @Override
+    public void deleteWorkload(ProcessInstance processInstance) {
+        server.undeployWorkload(processInstance.getFrequencyList());
     }
 
     @Override

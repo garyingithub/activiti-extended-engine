@@ -6,5 +6,7 @@ import java.io.File;
 
 public interface WorkflowEngine {
     void generateWorkload(ProcessInstance processInstance);
+    void deleteWorkload(ProcessInstance processInstance);
+
     void deployDefinition(File file);
 }

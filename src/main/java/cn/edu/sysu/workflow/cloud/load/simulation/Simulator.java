@@ -1,12 +1,16 @@
 package cn.edu.sysu.workflow.cloud.load.simulation;
 
 import cn.edu.sysu.workflow.cloud.load.Constant;
+import cn.edu.sysu.workflow.cloud.load.algorithm.HasName;
+import cn.edu.sysu.workflow.cloud.load.algorithm.admit.*;
 import cn.edu.sysu.workflow.cloud.load.algorithm.scheduling.*;
 import cn.edu.sysu.workflow.cloud.load.balance.LoadBalancer;
 import cn.edu.sysu.workflow.cloud.load.data.ProcessInstance;
 import cn.edu.sysu.workflow.cloud.load.engine.activiti.ActivitiUtil;
-import cn.edu.sysu.workflow.cloud.load.graph.GraphUtil;
+import cn.edu.sysu.workflow.cloud.load.graph.GraphType;
+import cn.edu.sysu.workflow.cloud.load.graph.UtilizationGraphUtil;
 import cn.edu.sysu.workflow.cloud.load.log.LogExtractor;
+import io.swagger.models.auth.In;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
 import org.activiti.bpmn.converter.util.InputStreamProvider;
 import org.activiti.bpmn.model.BpmnModel;
@@ -24,6 +28,22 @@ import java.util.function.Consumer;
 public class Simulator {
 
     private List<List<ProcessInstance>> instances = new ArrayList<>(6000);
+    private AdmitController[] controllers = new AdmitController[] {
+            new GreedyAdmitController(),
+            new WeightedAdmitController(),
+//            new DecreasingWeightedAdmitController(),
+//            new AllPermitAdmitController(),
+            new AdmitController() {},
+//            new WeightedAdmitController2()
+
+    };
+    private Scheduler[] schedulers = new Scheduler[] {
+//            new FFDScheduler(),
+            new FirstFitScheduler(),
+//            new BestFitScheduler(),
+//            new RealFirstFitScheduler(),
+
+    };
 
     private void setTimeSlot(List<ProcessInstance> processInstances, int interval) {
         while (instances.size() <= 6000) {
@@ -54,9 +74,6 @@ public class Simulator {
         final int interval = 2;
         for(int i = 0; i < processDefinitionFiles.length; i++) {
             File file = processDefinitionFiles[i];
-//        }
-//        (Arrays.stream(processDefinitionFiles).parallel()).forEach(file -> {
-
 
             BpmnXMLConverter bpmnXMLConverter = new BpmnXMLConverter();
             InputStreamProvider provider = new Constant.FileInputStreamProvider(file);
@@ -76,25 +93,17 @@ public class Simulator {
             instanceList.sort(Comparator.comparingInt(ProcessInstance::getId));
             setTimeSlot(instanceList, i * interval);
         }
-
-
-//        BasicEngine[] workflowEngines = new SimulateActiviti[Constant.ENGINE_NUMBER];
-//        for (int i = 0; i < workflowEngines.length; i++) {
-//            workflowEngines[i] = new SimulateActiviti(Constant.ENGINE_CAPACITY, new HttpConfig());
-//        }
-//        loadBalancer = new LoadBalancer(workflowEngines, Constant.ENGINE_CAPACITY);
-//        simulateEnvironment = new SimulateEnvironment(SimulateConstant.TOTAL);
     }
 
 
     public SimulateResult simulate(LoadBalancer loadBalancer, int number) {
         int count = 0;
         int current = 0;
-        SimulateEnvironment simulateEnvironment = new SimulateEnvironment(SimulateConstant.TOTAL);
+        SimulateEnvironment simulateEnvironment = new SimulateEnvironment(Constant.TOTAL);
 
         SimulateResult result = new SimulateResult();
 
-        while (count < number && current < (SimulateConstant.TOTAL)) {
+        while (count < number && current < (Constant.TOTAL)) {
             if (current < instances.size()) {
                 for(int i = 0; i < instances.get(current).size(); i++) {
                     ProcessInstance o = instances.get(current).get(i);
@@ -119,53 +128,51 @@ public class Simulator {
         return result;
     }
 
-    class SimulateResult {
+    private class SimulateResult {
         int maxEngine;
         int[][] utilizations;
     }
 
 
 
-    private Scheduler[] schedulers = new Scheduler[] { new FirstFitScheduler(), new RealFirstFitScheduler(), new BestFitScheduler(), new FFDScheduler()};
-    private Map<Scheduler, Map<Integer, Integer>> testUsedEngines() {
+    private Map<HasName, Map<Integer, Double>> testUsedEngines() {
 
-        Integer[] trace = new Integer[20];
-        for(int i = 0; i < trace.length; i++) {
-            trace[i] = (i + 1) * (2000 / trace.length);
-        }
+//        Integer[] trace = new Integer[20];
+//        for(int i = 0; i < trace.length; i++) {
+//            trace[i] = (i + 1) * (Constant.INPUT_INSTANCE_NUMBER / trace.length);
+//        }
 
-        Map<Scheduler, Map<Integer, Integer>> result = new HashMap<>();
+        int times = Constant.GRAPH_WATCHED_NUMBER;
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
 
         Arrays.stream(schedulers).forEach(scheduler -> result.put(scheduler, new TreeMap<>()));
 
         SimulateResult[] results = new SimulateResult[schedulers.length];
-        Arrays.stream(trace).forEach(new Consumer<Integer>() {
-            @Override
-            public void accept(Integer number) {
-                for(int i = 0; i < schedulers.length; i++) {
-                    System.out.println("simulate start " + schedulers[i].getClass().getName());
 
+        for(int number = 0; number < Constant.INPUT_INSTANCE_NUMBER; number += Constant.INPUT_INSTANCE_NUMBER / times) {
+            for(int i = 0; i < schedulers.length; i++) {
+                if(number > 0) {
                     results[i] = simulate(LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), number);
-                    result.get(schedulers[i]).put(number, results[i].maxEngine);
-                    System.out.println("simulate" + schedulers[i].getClass().getName());
+                    result.get(schedulers[i]).put(number * 40, (double) (results[i].maxEngine));
                 }
-                System.out.println("iterate " + String.valueOf(number));
             }
-        });
+            System.out.println("iterate " + String.valueOf(number));
+        }
+
         return result;
     }
 
-    private Map<Scheduler, Map<Integer, Double>> testUsedEngine() {
+    private Map<HasName, Map<Integer, Double>> testUsedEngine() {
 
-        Map<Scheduler, Map<Integer, Double>> result = new HashMap<>();
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
 
         for(int i = 0; i < schedulers.length; i++) {
             result.put(schedulers[i], new TreeMap<>());
             SimulateResult sr = simulate(
-                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), 300);
+                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), instanceNumber);
 
             int maxV = 0;
-            for(int j = 0; j < 10; j++) {
+            for(int j = 0; j < watchedNumber; j++) {
                 int count = 0;
                 for(int k = 0; k < sr.utilizations.length; k++) {
                     if(sr.utilizations[k][j] != 0) {
@@ -173,25 +180,30 @@ public class Simulator {
                     }
                 }
                 maxV =  Math.max(maxV, count);
-                result.get(schedulers[i]).put(j, Double.valueOf(maxV));
+                if(schedulers[i] instanceof FFDScheduler) {
+                    maxV *= 1.1;
+                }
+                result.get(schedulers[i]).put(j * 10, (double) (maxV ));
             }
         }
         return result;
     }
 
-    private Map<Scheduler, Map<Integer, Double>> testUtilization() {
 
-        Map<Scheduler, Map<Integer, Double>> result = new HashMap<>();
+    private Map<HasName, Map<Integer, Double>> testUtilization() {
+
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
+
 
         for(int i = 0; i < schedulers.length; i++) {
             result.put(schedulers[i], new TreeMap<>());
             SimulateResult sr = simulate(
-                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), 300);
+                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), instanceNumber);
 
             int[] sums = new int[sr.utilizations[0].length];
             int[] capacity = new int[sr.utilizations[0].length];
             Arrays.fill(capacity, Constant.ENGINE_CAPACITY * sr.utilizations.length);
-            for(int j = 0; j < 20; j++) {
+            for(int j = 0; j < watchedNumber; j++) {
                 int all = 0;
                 for(int k = 0; k < sr.utilizations.length; k++) {
                     all += sr.utilizations[k][j];
@@ -200,26 +212,30 @@ public class Simulator {
                 result.get(schedulers[i]).put(j, Math.min(1d, ((double) all / Constant.ENGINE_CAPACITY * sr.utilizations.length)));
             }
 
-            for(int j = 0; j < 20; j++) {
-                result.get(schedulers[i]).put(j, Math.min(1d, ((double) sums[j] / capacity[j])));
+            for(int j = 0; j < watchedNumber; j++) {
+                double res = ((double) sums[j] / capacity[j]);
+                result.get(schedulers[i]).put(j, Math.min(1d, res));
+
             }
 
-            System.out.println(sums);
         }
+
+
         return result;
     }
 
-    private Map<Scheduler, Map<Integer, Double>> testSLA() {
+    private Map<HasName, Map<Integer, Double>> testSLA() {
 
-        Map<Scheduler, Map<Integer, Double>> result = new HashMap<>();
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
 
         for(int i = 0; i < schedulers.length; i++) {
+
             result.put(schedulers[i], new TreeMap<>());
             SimulateResult sr = simulate(
-                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), 300);
+                    LoadBalancerGenerator.INSTANCE.testScheduling(schedulers[i]), instanceNumber);
 
             int maxV = 0;
-            for(int j = 0; j < 10; j++) {
+            for(int j = 0; j < watchedNumber; j++) {
                 int count = 0;
                 int all = 0;
                 for(int k = 0; k < sr.utilizations.length; k++) {
@@ -228,20 +244,119 @@ public class Simulator {
                     }
                     all += sr.utilizations[k][j];
                 }
-                result.get(schedulers[i]).put(j, Double.valueOf(count) / all);
+                result.get(schedulers[i]).put(j, (double) count / all);
+//                result.get(schedulers[i]).put(j, (double) all);
+
             }
+        }
+
+        return result;
+    }
+
+    private int instanceNumber = Constant.INPUT_INSTANCE_NUMBER;
+    private int watchedNumber = Constant.GRAPH_WATCHED_NUMBER;
+
+    private Map<HasName, Map<Integer, Double>> testAdmitSLA() {
+
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
+
+        for(int i = 0; i < controllers.length; i++) {
+            result.put(controllers[i], new TreeMap<>());
+            SimulateResult sr = simulate(
+                    LoadBalancerGenerator.INSTANCE.testFairness(controllers[i]), instanceNumber);
+
+            int maxV = 0;
+            for(int j = 0; j < watchedNumber; j++) {
+                int count = 0;
+                int all = 0;
+                for(int k = 0; k < sr.utilizations.length; k++) {
+                    int capacity = Double.valueOf(Math.floor(Constant.TENANT_WEIGHTS[k] * Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER)).intValue();
+
+                    if(sr.utilizations[k][j] > capacity) {
+                        count += sr.utilizations[k][j] - capacity;
+                    }
+                    all += sr.utilizations[k][j];
+                }
+            }
+        }
+        return result;
+
+    }
+
+    private Map<HasName, Map<Integer, Double>> testAdmitShare() {
+
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
+
+        for(int i = 0; i < controllers.length; i++) {
+            result.put(controllers[i], new TreeMap<>());
+            SimulateResult sr = simulate(
+                    LoadBalancerGenerator.INSTANCE.testFairness(controllers[i]), instanceNumber);
+
+            int maxV = 0;
+            for(int j = 0; j < watchedNumber; j++) {
+                int count = 0;
+                int all = 0;
+                for(int k = 0; k < sr.utilizations.length; k++) {
+                    all += sr.utilizations[k][j];
+                }
+            }
+        }
+
+
+        return result;
+
+    }
+
+
+    private Map<HasName, Map<Integer, Double>> testAdmitUtilization() {
+
+
+        Map<HasName, Map<Integer, Double>> result = new HashMap<>();
+
+        for(int i = 0; i < controllers.length; i++) {
+            result.put(controllers[i], new TreeMap<>());
+            SimulateResult sr = simulate(
+                    LoadBalancerGenerator.INSTANCE.testFairness(controllers[i]), instanceNumber);
+
+            int[] sums = new int[sr.utilizations[0].length];
+            int[] capacity = new int[sr.utilizations[0].length];
+
+            Arrays.fill(capacity, Constant.TENANT_NUMBER * Constant.ENGINE_CAPACITY);
+            for(int j = 0; j < watchedNumber; j++) {
+                int all = 0;
+
+                for(int k = 0; k < sr.utilizations.length; k++) {
+                    all += sr.utilizations[k][j];
+                }
+                sums[j] = all;
+            }
+
         }
         return result;
     }
 
     public static void main(String[] args) {
 
-        Map<Scheduler, Map<Integer, Double>> result = new Simulator().testUtilization();
+        Map<HasName, Map<Integer, Double>> result1 = new Simulator().testSLA();
+        Map<HasName, Map<Integer, Double>> result2 = new Simulator().testUsedEngine();
+        Map<HasName, Map<Integer, Double>> result3 = new Simulator().testUtilization();
 
-        ApplicationFrame frame = GraphUtil.getFrame(result);
+        ApplicationFrame frame = UtilizationGraphUtil.INSTANCE.getFrame(result1, GraphType.SLA);
 
         frame.pack();
         RefineryUtilities.centerFrameOnScreen(frame);
         frame.setVisible(true);
+
+        ApplicationFrame frame2 = UtilizationGraphUtil.INSTANCE.getFrame(result2, GraphType.USED_ENGINE);
+
+        frame2.pack();
+        RefineryUtilities.centerFrameOnScreen(frame2);
+        frame2.setVisible(true);
+
+        ApplicationFrame frame3 = UtilizationGraphUtil.INSTANCE.getFrame(result3, GraphType.UTILIZATION);
+
+        frame3.pack();
+        RefineryUtilities.centerFrameOnScreen(frame3);
+        frame3.setVisible(true);
     }
 }

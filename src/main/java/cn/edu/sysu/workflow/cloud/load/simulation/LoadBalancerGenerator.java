@@ -2,6 +2,7 @@ package cn.edu.sysu.workflow.cloud.load.simulation;
 
 import cn.edu.sysu.workflow.cloud.load.Constant;
 import cn.edu.sysu.workflow.cloud.load.algorithm.admit.AdmitController;
+import cn.edu.sysu.workflow.cloud.load.algorithm.admit.AllPermitAdmitController;
 import cn.edu.sysu.workflow.cloud.load.algorithm.scheduling.Scheduler;
 import cn.edu.sysu.workflow.cloud.load.algorithm.scheduling.TenantBasedScheduler;
 import cn.edu.sysu.workflow.cloud.load.balance.LoadBalancer;
@@ -21,11 +22,7 @@ public enum LoadBalancerGenerator {
     }
 
     LoadBalancer testFairness(AdmitController controller) {
-        BasicEngine[] engines = new BasicEngine[Constant.TENANT_NUMBER];
-
-        for(int i = 0; i < engines.length; i++) {
-            engines[i] = new SimulateActiviti(Constant.ENGINE_CAPACITY, new HttpConfig());
-        }
+        BasicEngine[] engines = new BasicEngine[0];
 
         LoadBalancer loadBalancer = new LoadBalancer(engines,
                 Constant.ENGINE_CAPACITY * Constant.TENANT_NUMBER);
@@ -46,7 +43,7 @@ public enum LoadBalancerGenerator {
             engines[i] = new SimulateActiviti(capacity, new HttpConfig());
         }
         LoadBalancer loadBalancer = new LoadBalancer(engines, Constant.ENGINE_CAPACITY);
-        loadBalancer.setAdmitController(new AdmitController() {});
+        loadBalancer.setAdmitController(new AllPermitAdmitController() {});
         loadBalancer.setScheduler(scheduler);
         return loadBalancer;
     }

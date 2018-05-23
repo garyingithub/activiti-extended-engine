@@ -57,11 +57,6 @@ public class Main {
                         loadBalancer.launchProcessInstance(instanceList.get(pos));
                         System.out.println(count.getAndIncrement());
                     });
-//                try {
-//                    TimeUnit.MILLISECONDS.sleep(instanceList.get(i + 1).getTasks().get(0).start - instanceList.get(i).getTasks().get(0).start);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
                 }
             }
         });

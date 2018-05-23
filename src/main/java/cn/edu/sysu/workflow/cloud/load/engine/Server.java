@@ -21,9 +21,6 @@ public class Server implements ResourceOwner {
 
     @Override
     public synchronized boolean deployWorkload(final int[] workload) {
-        if(checkOverload(workload)) {
-            return false;
-        }
         for(int i = 0; i < workload.length; i++) {
             if(i < remainingCapacity.length) {
                 remainingCapacity[i] -= workload[i];
@@ -32,7 +29,17 @@ public class Server implements ResourceOwner {
         return true;
     }
 
+    public void undeployWorkload(final int[] workload) {
+        for(int i = 0; i < workload.length; i++) {
+            if(i < remainingCapacity.length) {
+                remainingCapacity[i] += workload[i];
+            }
+        }
+    }
 
+    public int getCapacity() {
+        return this.capacity;
+    }
     @Override
     public synchronized boolean checkOverload(int[] workload) {
         for(int i = 0; i < workload.length; i++) {
@@ -48,7 +55,7 @@ public class Server implements ResourceOwner {
         Constant.pastPeriod(this.remainingCapacity, this.capacity);
     }
 
-    public int[] getRemainingCapacity() {
+    public int[] getCapacityCopy() {
         return Arrays.copyOf(remainingCapacity, remainingCapacity.length);
     }
 }

@@ -14,4 +14,6 @@ public class SimulateActiviti extends Activiti {
     public void generateWorkload(ProcessInstance processInstance) {
         server.deployWorkload(processInstance.getFrequencyList());
     }
+
+
 }
